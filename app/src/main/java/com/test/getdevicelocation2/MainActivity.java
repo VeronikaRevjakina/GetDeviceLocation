@@ -52,9 +52,11 @@ public class MainActivity extends AppCompatActivity {
                          textView.setText(location.toString());
 
                          double elevation;
-
-                         //String url = "https://maps.googleapis.com/maps/api/elevation/json?locations=" + Lat + "," + Lon + "&key="+ApiKey;
-                         String url="https://developer.android.com/index.html";
+                         double Lat=location.getLatitude();
+                         double Lon=location.getLongitude();
+                          String ApiKey="";
+                         String url = "https://maps.googleapis.com/maps/api/elevation/json?locations=" + Lat + "," + Lon + "&key="+ApiKey;
+                         //String url="https://developer.android.com/index.html";
                          if(contentText==null){
                              new ProgressTask().execute(url);
                          }
