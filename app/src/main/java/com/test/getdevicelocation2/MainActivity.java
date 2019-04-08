@@ -18,6 +18,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
+import org.json.*;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -48,8 +49,8 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onSuccess(Location location) {
                      if(location !=null) {
-                         TextView textView = findViewById(R.id.location);
-                         textView.setText(location.toString());
+                         //TextView textView = findViewById(R.id.location);
+                         //textView.setText(location.toString());
 
                          double elevation;
                          double Lat=location.getLatitude();
@@ -58,7 +59,25 @@ public class MainActivity extends AppCompatActivity {
                          String url = "https://maps.googleapis.com/maps/api/elevation/json?locations=" + Lat + "," + Lon + "&key="+ApiKey;
                          //String url="https://developer.android.com/index.html";
                          if(contentText==null){
-                             new ProgressTask().execute(url);
+                             // new ProgressTask().execute(url);
+                             try {
+                           contentText = new ProgressTask().execute(url).get();
+                                }
+                     catch (java.util.concurrent.ExecutionException | InterruptedException ei) {
+                      ei.printStackTrace();
+                         }
+                            TextView textView = findViewById(R.id.location);
+                             //textView.setText(contentText); //VIEW ALL REQUEST
+                             try {
+                    JSONObject jsonObj = new JSONObject(contentText);
+                    JSONArray resultEl = jsonObj.getJSONArray("results");
+                    JSONObject current = resultEl.getJSONObject(0);
+                    elevation = Double.parseDouble(current.getString("elevation"));
+                    textView.setText(String.valueOf(elevation));
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
                          }
                      }
                     }
@@ -70,7 +89,11 @@ public class MainActivity extends AppCompatActivity {
        ActivityCompat.requestPermissions(this,new String[] {ACCESS_FINE_LOCATION},1);
     }
 
+
+
     private class ProgressTask extends AsyncTask<String, Void, String> {
+
+
         @Override
         protected String doInBackground(String... path) {
             String content;
@@ -83,6 +106,17 @@ public class MainActivity extends AppCompatActivity {
 
             return content;
         }
+
+        @Override
+        protected void onPostExecute(String content) {
+          super.onPostExecute(contentText);
+            //contentText=content;
+            /*contentView.setText(content);
+            webView.loadData(content, "text/html; charset=utf-8", "utf-8");
+            Toast.makeText(getActivity(), "Данные загружены", Toast.LENGTH_SHORT)
+                    .show();*/
+        }
+
 
         private String getContent(String path) throws IOException {
             BufferedReader reader = null;
