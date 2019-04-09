@@ -18,6 +18,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import org.json.*;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -55,7 +58,12 @@ public class MainActivity extends AppCompatActivity {
                          double elevation;
                          double Lat=location.getLatitude();
                          double Lon=location.getLongitude();
-                         textView1.setText("Latitude: "+String.valueOf(Lat)+"   Longitude: "+String.valueOf(Lon));
+
+                         Date date = new Date(location.getTime());
+                         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
+                         String time = dateFormat.format(date);
+
+                         textView1.setText("Latitude: "+String.valueOf(Lat)+"   Longitude: "+String.valueOf(Lon)+ "   Time:"+time);
                           String ApiKey="";
                          String url = "https://maps.googleapis.com/maps/api/elevation/json?locations=" + Lat + "," + Lon + "&key="+ApiKey;
                          //String url="https://developer.android.com/index.html";
