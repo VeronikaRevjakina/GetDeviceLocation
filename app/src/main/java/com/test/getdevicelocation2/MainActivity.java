@@ -49,12 +49,13 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onSuccess(Location location) {
                      if(location !=null) {
-                         //TextView textView = findViewById(R.id.location);
-                         //textView.setText(location.toString());
+                         TextView textView1 = findViewById(R.id.location);
+                         //textView1.setText("Location: "+location.toString());
 
                          double elevation;
                          double Lat=location.getLatitude();
                          double Lon=location.getLongitude();
+                         textView1.setText("Latitude: "+String.valueOf(Lat)+"   Longitude: "+String.valueOf(Lon));
                           String ApiKey="";
                          String url = "https://maps.googleapis.com/maps/api/elevation/json?locations=" + Lat + "," + Lon + "&key="+ApiKey;
                          //String url="https://developer.android.com/index.html";
@@ -66,14 +67,14 @@ public class MainActivity extends AppCompatActivity {
                      catch (java.util.concurrent.ExecutionException | InterruptedException ei) {
                       ei.printStackTrace();
                          }
-                            TextView textView = findViewById(R.id.location);
-                             //textView.setText(contentText); //VIEW ALL REQUEST
+                            TextView textView2 = findViewById(R.id.elevation);
+                             //textView2.setText(contentText); //VIEW ALL REQUEST
                              try {
                     JSONObject jsonObj = new JSONObject(contentText);
                     JSONArray resultEl = jsonObj.getJSONArray("results");
                     JSONObject current = resultEl.getJSONObject(0);
                     elevation = Double.parseDouble(current.getString("elevation"));
-                    textView.setText(String.valueOf(elevation));
+                    textView2.setText("Elevation: "+String.valueOf(elevation));
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
