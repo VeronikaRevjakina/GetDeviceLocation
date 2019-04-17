@@ -1,25 +1,45 @@
 package com.test.getdevicelocation2;
 
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.AsyncTask;
+
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+
+import com.google.android.gms.location.ActivityRecognition;
+import com.google.android.gms.location.ActivityRecognitionClient;
+import com.google.android.gms.location.ActivityTransition;
+import com.google.android.gms.location.ActivityTransitionEvent;
+import com.google.android.gms.location.ActivityTransitionRequest;
+import com.google.android.gms.location.ActivityTransitionResult;
+import com.google.android.gms.location.DetectedActivity;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 
 import org.json.*;
 
@@ -29,8 +49,14 @@ import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 
 public class MainActivity extends AppCompatActivity {
 
-    private FusedLocationProviderClient client;
+    private FusedLocationProviderClient locationClient;
     String contentText = null;
+
+    private PendingIntent mPendingIntent;
+    private myTransitionReceiver mTransitionsReceiver;
+
+    private final String TRANSITION_ACTION_RECEIVER =
+            BuildConfig.APPLICATION_ID + "TRANSITION_ACTION_RECEIVER";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,17 +64,29 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         requestPermission();
-        client = LocationServices.getFusedLocationProviderClient(this);
+        locationClient = LocationServices.getFusedLocationProviderClient(this);
+
+        Intent intent = new Intent(TRANSITION_ACTION_RECEIVER);
+        mPendingIntent = PendingIntent.getBroadcast(MainActivity.this, 0, intent, 0);
+
+        mTransitionsReceiver = new myTransitionReceiver();
+        registerReceiver(mTransitionsReceiver, new IntentFilter(TRANSITION_ACTION_RECEIVER));
+
+
+        //mTransitionsReceiver.onReceive(MainActivity.this,intent);
 
         Button button = findViewById(R.id.getLocation);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
+                //gimTransitionsReceiver.onReceive(MainActivity.this,new Intent(TRANSITION_ACTION_RECEIVER));
+
                 if (ActivityCompat.checkSelfPermission(MainActivity.this, ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ) {
 
                     return;
                 }
-                client.getLastLocation().addOnSuccessListener(MainActivity.this, new OnSuccessListener<Location>() {
+                locationClient.getLastLocation().addOnSuccessListener(MainActivity.this, new OnSuccessListener<Location>() {
                     @Override
                     public void onSuccess(Location location) {
                      if(location !=null) {
@@ -64,7 +102,7 @@ public class MainActivity extends AppCompatActivity {
                          String time = dateFormat.format(date);
 
                          textView1.setText("Latitude: "+String.valueOf(Lat)+"   Longitude: "+String.valueOf(Lon)+ "   Time:"+time);
-                          String ApiKey="";
+                          String ApiKey="AIzaSyCUsenQyvXXFMHTEcANoDDQhAUoSJo-dNI";
                          String url = "https://maps.googleapis.com/maps/api/elevation/json?locations=" + Lat + "," + Lon + "&key="+ApiKey;
                          //String url="https://developer.android.com/index.html";
                          if(contentText==null){
@@ -96,6 +134,127 @@ public class MainActivity extends AppCompatActivity {
     }
     private void requestPermission(){
        ActivityCompat.requestPermissions(this,new String[] {ACCESS_FINE_LOCATION},1);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        setUpTransitions();
+    }
+
+
+    private void setUpTransitions(){
+        List<ActivityTransition> transitions = new ArrayList<>();
+
+        transitions.add(
+                new ActivityTransition.Builder()
+                        .setActivityType(DetectedActivity.WALKING)
+                        .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
+                        .build());
+
+        transitions.add(
+                new ActivityTransition.Builder()
+                        .setActivityType(DetectedActivity.WALKING)
+                        .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
+                        .build());
+
+        transitions.add(
+                new ActivityTransition.Builder()
+                        .setActivityType(DetectedActivity.STILL)
+                        .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
+                        .build());
+
+        transitions.add(
+                new ActivityTransition.Builder()
+                        .setActivityType(DetectedActivity.STILL)
+                        .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
+                        .build());
+
+        transitions.add(
+                new ActivityTransition.Builder()
+                        .setActivityType(DetectedActivity.RUNNING)
+                        .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
+                        .build());
+
+        transitions.add(
+                new ActivityTransition.Builder()
+                        .setActivityType(DetectedActivity.RUNNING)
+                        .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
+                        .build());
+
+        ActivityTransitionRequest request = new ActivityTransitionRequest(transitions);
+
+        // Register for Transitions Updates.
+        Task<Void> task =
+                ActivityRecognition.getClient(this)
+                        .requestActivityTransitionUpdates(request, mPendingIntent);
+        task.addOnSuccessListener(
+                new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void result) {
+                        //Log.i(TAG, "Transitions Api was successfully registered.");
+                    }
+                });
+        task.addOnFailureListener(
+                new OnFailureListener() {
+                    @Override
+                    public void onFailure(Exception e) {
+                        //Log.e(TAG, "Transitions Api could not be registered: " + e);
+                    }
+                });
+    }
+
+
+    private static String toActivityString(int activity) {
+        switch (activity) {
+            case DetectedActivity.STILL:
+                return "STILL";
+            case DetectedActivity.WALKING:
+                return "WALKING";
+
+            case DetectedActivity.RUNNING:
+                return "RUNNING";
+            default:
+                return "UNKNOWN";
+        }
+    }
+
+    private static String toTransitionType(int transitionType) {
+        switch (transitionType) {
+            case ActivityTransition.ACTIVITY_TRANSITION_ENTER:
+                return "ENTER";
+            case ActivityTransition.ACTIVITY_TRANSITION_EXIT:
+                return "EXIT";
+            default:
+                return "UNKNOWN";
+        }
+    }
+
+    public class myTransitionReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (!TextUtils.equals(TRANSITION_ACTION_RECEIVER, intent.getAction())) {
+                /*mLogFragment.getLogView()
+                        .echo("Unsupported action received in myTransitionReceiver class: action="
+                                + intent.getAction());*/
+                TextView textView3 = findViewById(R.id.action);
+                textView3.setText("FAIL");
+                return;
+            }
+
+            if (ActivityTransitionResult.hasResult(intent)) {
+                ActivityTransitionResult result = ActivityTransitionResult.extractResult(intent);
+                for (ActivityTransitionEvent event : result.getTransitionEvents()) {
+                    String theActivity = toActivityString(event.getActivityType());
+                    String transType = toTransitionType(event.getTransitionType());
+                    TextView textView3 = findViewById(R.id.action);
+                    textView3.setText("Transition: "
+                                    + theActivity + " (" + transType + ")" + "   "
+                                    + new SimpleDateFormat("HH:mm:ss", Locale.UK)
+                                    .format(new Date()));
+                }
+            }
+        }
     }
 
 
