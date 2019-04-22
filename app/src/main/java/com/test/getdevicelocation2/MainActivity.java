@@ -18,6 +18,7 @@ import android.widget.Button;
 import android.widget.TextView;
 
 
+import com.google.ads.mediation.MediationServerParameters;
 import com.google.android.gms.location.ActivityRecognition;
 import com.google.android.gms.location.ActivityRecognitionClient;
 import com.google.android.gms.location.ActivityTransition;
@@ -35,6 +36,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.security.InvalidParameterException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -91,7 +93,15 @@ public class MainActivity extends AppCompatActivity {
                     public void onSuccess(Location location) {
                      if(location !=null) {
                          TextView textView1 = findViewById(R.id.location);
+                         TextView textView4 = findViewById(R.id.RMR);
                          //textView1.setText("Location: "+location.toString());
+
+                         try {
+                            textView4.setText("RMR is: "+ String.valueOf(
+                                    countRMRUsingMifflinJeorEquation(1,60,165,21)));
+                         } catch (InvalidParameterException e){
+                             e.printStackTrace();
+                         }
 
                          double elevation;
                          double Lat=location.getLatitude();
@@ -102,7 +112,7 @@ public class MainActivity extends AppCompatActivity {
                          String time = dateFormat.format(date);
 
                          textView1.setText("Latitude: "+String.valueOf(Lat)+"   Longitude: "+String.valueOf(Lon)+ "   Time:"+time);
-                          String ApiKey="AIzaSyCUsenQyvXXFMHTEcANoDDQhAUoSJo-dNI";
+                          String ApiKey="";
                          String url = "https://maps.googleapis.com/maps/api/elevation/json?locations=" + Lat + "," + Lon + "&key="+ApiKey;
                          //String url="https://developer.android.com/index.html";
                          if(contentText==null){
@@ -134,6 +144,23 @@ public class MainActivity extends AppCompatActivity {
     }
     private void requestPermission(){
        ActivityCompat.requestPermissions(this,new String[] {ACCESS_FINE_LOCATION},1);
+    }
+
+    /*sex is int: -1 not given,0 male,1 female
+    weight in kg
+    heilght in cm*/
+    public int countRMRUsingMifflinJeorEquation(int sex,double weight,double height,int age){
+        int RMR=0;
+     if(sex!=-1 && weight>0 && height>0&& age>0 ) {
+         if (sex == 0) {
+             RMR = (int) (9.99 * weight + 6.25 * height - 4.92 * age + 5); //male
+         } else if (sex == 1) {
+             RMR = (int) (9.99 * weight + 6.25 * height - 4.92 * age - 161); //female
+         }
+     }
+     else{
+     throw new InvalidParameterException() ;}
+     return RMR;
     }
 
     @Override
