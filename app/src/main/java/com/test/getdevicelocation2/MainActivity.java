@@ -1,12 +1,14 @@
 package com.test.getdevicelocation2;
 
 import android.app.PendingIntent;
+import android.arch.persistence.room.Room;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.location.LocationManager;
 import android.os.AsyncTask;
 
 import android.support.v4.app.ActivityCompat;
@@ -37,6 +39,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.security.InvalidParameterException;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -52,13 +55,21 @@ import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 public class MainActivity extends AppCompatActivity {
 
     private FusedLocationProviderClient locationClient;
+    private Location mLastLocation;
+    private double mElevation;
+
     String contentText = null;
 
     private PendingIntent mPendingIntent;
     private myTransitionReceiver mTransitionsReceiver;
 
+
+
     private final String TRANSITION_ACTION_RECEIVER =
             BuildConfig.APPLICATION_ID + "TRANSITION_ACTION_RECEIVER";
+
+
+    private AppDatabase database;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,6 +85,14 @@ public class MainActivity extends AppCompatActivity {
         mTransitionsReceiver = new myTransitionReceiver();
         registerReceiver(mTransitionsReceiver, new IntentFilter(TRANSITION_ACTION_RECEIVER));
 
+        database=AppDatabase.getDatabaseInstance(this);
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                prepareValuesMETContent();
+            }
+        }) .start();
 
         //mTransitionsReceiver.onReceive(MainActivity.this,intent);
 
@@ -82,68 +101,138 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-                //gimTransitionsReceiver.onReceive(MainActivity.this,new Intent(TRANSITION_ACTION_RECEIVER));
 
-                if (ActivityCompat.checkSelfPermission(MainActivity.this, ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ) {
+                TextView textView1 = findViewById(R.id.location);
+                TextView textView2 = findViewById(R.id.elevation);
+                TextView textView4 = findViewById(R.id.RMR);
+                //textView1.setText("Location: "+location.toString());
 
-                    return;
-                }
-                locationClient.getLastLocation().addOnSuccessListener(MainActivity.this, new OnSuccessListener<Location>() {
-                    @Override
-                    public void onSuccess(Location location) {
-                     if(location !=null) {
-                         TextView textView1 = findViewById(R.id.location);
-                         TextView textView4 = findViewById(R.id.RMR);
-                         //textView1.setText("Location: "+location.toString());
-
-                         try {
-                            textView4.setText("RMR is: "+ String.valueOf(
-                                    countRMRUsingMifflinJeorEquation(1,60,165,21)));
-                         } catch (InvalidParameterException e){
-                             e.printStackTrace();
-                         }
-
-                         double elevation;
-                         double Lat=location.getLatitude();
-                         double Lon=location.getLongitude();
-
-                         Date date = new Date(location.getTime());
-                         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
-                         String time = dateFormat.format(date);
-
-                         textView1.setText("Latitude: "+String.valueOf(Lat)+"   Longitude: "+String.valueOf(Lon)+ "   Time:"+time);
-                          String ApiKey="";
-                         String url = "https://maps.googleapis.com/maps/api/elevation/json?locations=" + Lat + "," + Lon + "&key="+ApiKey;
-                         //String url="https://developer.android.com/index.html";
-                         if(contentText==null){
-                             // new ProgressTask().execute(url);
-                             try {
-                           contentText = new ProgressTask().execute(url).get();
-                                }
-                     catch (java.util.concurrent.ExecutionException | InterruptedException ei) {
-                      ei.printStackTrace();
-                         }
-                            TextView textView2 = findViewById(R.id.elevation);
-                             //textView2.setText(contentText); //VIEW ALL REQUEST
-                             try {
-                    JSONObject jsonObj = new JSONObject(contentText);
-                    JSONArray resultEl = jsonObj.getJSONArray("results");
-                    JSONObject current = resultEl.getJSONObject(0);
-                    elevation = Double.parseDouble(current.getString("elevation"));
-                    textView2.setText("Elevation: "+String.valueOf(elevation));
-                } catch (JSONException e) {
+                try {
+                    textView4.setText("RMR is: "+ String.valueOf(
+                            countRMRUsingMifflinJeorEquation(1,60,165,21)));
+                } catch (InvalidParameterException e){
                     e.printStackTrace();
                 }
 
-                         }
-                     }
-                    }
-                });
+
+                getCurrentLocation();
+                if(mLastLocation!=null) {
+                    double Lon = mLastLocation.getLongitude();
+                    double Lat = mLastLocation.getLatitude();
+
+                    String time = getCurrentTime();
+                    textView1.setText("Latitude: " + String.valueOf(Lat) + "   Longitude: " + String.valueOf(Lon) + "   Time:" + time);
+
+                    double elevation;
+
+                    if (getElevation(Lat,Lon)!=0.0){
+                        elevation=getElevation(Lat,Lon);}
+                    elevation=mElevation;
+
+                    textView2.setText("Elevation: " + String.valueOf(elevation));
+
+
+                }
+                else textView1.setText("Location is unknown");
+
+
+                List<ValuesMET> valuesMET=database.valueDao().getAllValues();
+                List<DetectedActivities> activities=database.activityDao().getAll();
             }
         });
     }
+
+    public void getCurrentLocation() {
+        if (ActivityCompat.checkSelfPermission(MainActivity.this, ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ) {
+
+        }
+
+        LocationManager mLocationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
+        mLastLocation = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        double longitude = mLastLocation.getLongitude();
+        double latitude = mLastLocation.getLatitude();
+        //double[] result={latitude,longitude};
+
+
+        /*locationClient.getLastLocation().addOnSuccessListener(MainActivity.this, new OnSuccessListener<Location>() {
+            @Override
+            public void onSuccess(Location location) {
+             if(location !=null) {
+
+
+                 double Lat=location.getLatitude();
+                 double Lon=location.getLongitude();
+
+
+                 Date date = new Date(location.getTime());
+                 SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
+                 String time = dateFormat.format(date);
+
+                 }
+            }
+        }); */
+
+    }
+
+    public String getCurrentTime(){
+        return new SimpleDateFormat("HH:mm:ss", Locale.UK)
+                .format(new Date());
+        /*Date date = new Date(location.getTime());
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
+        String time = dateFormat.format(date);*/
+    }
+    public double getElevation(double latitude, double longitude) {
+        double elevation;
+        String ApiKey="AIzaSyCUsenQyvXXFMHTEcANoDDQhAUoSJo-dNI";
+        String url = "https://maps.googleapis.com/maps/api/elevation/json?locations=" + latitude + "," + longitude + "&key="+ApiKey;
+        //String url="https://developer.android.com/index.html";
+        if(contentText==null){
+            // new ProgressTask().execute(url);
+            try {
+          contentText = new ProgressTask().execute(url).get();
+               }
+    catch (java.util.concurrent.ExecutionException | InterruptedException ei) {
+     ei.printStackTrace();
+        }
+
+            //textView2.setText(contentText); //VIEW ALL REQUEST
+            try {
+   JSONObject jsonObj = new JSONObject(contentText);
+   JSONArray resultEl = jsonObj.getJSONArray("results");
+   JSONObject current = resultEl.getJSONObject(0);
+   elevation = Double.parseDouble(current.getString("elevation"));
+   mElevation=elevation;
+   return elevation;
+
+} catch (JSONException e) {
+   e.printStackTrace();
+}
+
+        }
+        return 0;
+
+    }
+
     private void requestPermission(){
        ActivityCompat.requestPermissions(this,new String[] {ACCESS_FINE_LOCATION},1);
+    }
+
+
+//Insert initial table of MET values in Database
+    public void prepareValuesMETContent() {
+        ValuesMET RUNNING = new ValuesMET(8,8.0);
+        database.valueDao().insertMETValue(RUNNING);
+
+        ValuesMET STILL = new ValuesMET(3,1.0);
+        database.valueDao().insertMETValue(STILL);
+
+        ValuesMET WALKING = new ValuesMET(7,3.6);
+        database.valueDao().insertMETValue(WALKING);
+
+        ValuesMET ON_BICYCLE = new ValuesMET(1,5.0);
+        database.valueDao().insertMETValue(ON_BICYCLE);
+
+
     }
 
     /*sex is int: -1 not given,0 male,1 female
@@ -184,6 +273,16 @@ public class MainActivity extends AppCompatActivity {
                         .setActivityType(DetectedActivity.WALKING)
                         .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
                         .build());
+        transitions.add(
+                new ActivityTransition.Builder()
+                        .setActivityType(DetectedActivity.ON_BICYCLE)
+                        .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
+                        .build());
+        transitions.add(
+                new ActivityTransition.Builder()
+                        .setActivityType(DetectedActivity.ON_BICYCLE)
+                        .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
+                        .build());
 
         transitions.add(
                 new ActivityTransition.Builder()
@@ -220,6 +319,8 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onSuccess(Void result) {
                         //Log.i(TAG, "Transitions Api was successfully registered.");
+                        /*TextView textView3 = findViewById(R.id.action);
+                        textView3.setText("Transitions Api was successfully registered.");*/
                     }
                 });
         task.addOnFailureListener(
@@ -227,6 +328,8 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onFailure(Exception e) {
                         //Log.e(TAG, "Transitions Api could not be registered: " + e);
+                       /* TextView textView3 = findViewById(R.id.action);
+                        textView3.setText("Transitions Api could not be registered: .");*/
                     }
                 });
     }
@@ -235,23 +338,26 @@ public class MainActivity extends AppCompatActivity {
     private static String toActivityString(int activity) {
         switch (activity) {
             case DetectedActivity.STILL:
-                return "STILL";
+                return "STILL"; //3
             case DetectedActivity.WALKING:
-                return "WALKING";
+                return "WALKING"; //7
 
             case DetectedActivity.RUNNING:
-                return "RUNNING";
+                return "RUNNING"; //8
+
+            case DetectedActivity.ON_BICYCLE:
+                return "ON_BICYCLE";//1
             default:
-                return "UNKNOWN";
+                return "UNKNOWN"; //4
         }
     }
 
     private static String toTransitionType(int transitionType) {
         switch (transitionType) {
             case ActivityTransition.ACTIVITY_TRANSITION_ENTER:
-                return "ENTER";
+                return "ENTER"; //0
             case ActivityTransition.ACTIVITY_TRANSITION_EXIT:
-                return "EXIT";
+                return "EXIT"; //1
             default:
                 return "UNKNOWN";
         }
@@ -269,22 +375,58 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
+
             if (ActivityTransitionResult.hasResult(intent)) {
                 ActivityTransitionResult result = ActivityTransitionResult.extractResult(intent);
                 for (ActivityTransitionEvent event : result.getTransitionEvents()) {
-                    String theActivity = toActivityString(event.getActivityType());
-                    String transType = toTransitionType(event.getTransitionType());
+
+                    int activityType=event.getActivityType();
+                    int transitionType=event.getTransitionType();
+                    String theActivity = toActivityString(activityType);
+                    String transType = toTransitionType(transitionType);
+
+                    getCurrentLocation();
+                    double latitude = mLastLocation.getLatitude();
+                    double longitude = mLastLocation.getLongitude();
+                    double elevation;
+
+                     if (getElevation(latitude,longitude)!=0){
+                      elevation=getElevation(latitude,longitude);}
+                     elevation=mElevation;
+
+                    DetectedActivities lastActivity =
+                            new DetectedActivities(theActivity,activityType,transitionType,latitude,longitude,elevation,new Date());
+
+                    database.activityDao().insertActivity(lastActivity);
+
+
+
+
+
+
                     TextView textView3 = findViewById(R.id.action);
                     textView3.setText("Transition: "
                                     + theActivity + " (" + transType + ")" + "   "
                                     + new SimpleDateFormat("HH:mm:ss", Locale.UK)
-                                    .format(new Date()));
+                                    .format(new Date()));//new java.sql.Timestamp(Calendar.getInstance().getTime().getTime());
                 }
             }
         }
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(mTransitionsReceiver);
+        AppDatabase.destroyInstance();
+    }
 
+    /*@Override
+    protected void onPause() {
+        super.onPause();
+
+        unregisterReceiver(mTransitionsReceiver);
+    }*/
 
     private class ProgressTask extends AsyncTask<String, Void, String> {
 
