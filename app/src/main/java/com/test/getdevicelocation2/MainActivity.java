@@ -45,6 +45,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 import org.json.*;
 
@@ -57,6 +58,7 @@ public class MainActivity extends AppCompatActivity {
     private FusedLocationProviderClient locationClient;
     private Location mLastLocation;
     private double mElevation;
+    private double mRMR;
 
     String contentText = null;
 
@@ -116,7 +118,8 @@ public class MainActivity extends AppCompatActivity {
 
 
                 getCurrentLocation();
-                if(mLastLocation!=null) {
+                countRMRUsingMifflinJeorEquation(1,60,165,21);
+                //if(mLastLocation!=null) {
                     double Lon = mLastLocation.getLongitude();
                     double Lat = mLastLocation.getLatitude();
 
@@ -132,15 +135,75 @@ public class MainActivity extends AppCompatActivity {
                     textView2.setText("Elevation: " + String.valueOf(elevation));
 
 
-                }
-                else textView1.setText("Location is unknown");
+                //}
+                //else textView1.setText("Location is unknown");
 
 
                 List<ValuesMET> valuesMET=database.valueDao().getAllValues();
                 List<DetectedActivities> activities=database.activityDao().getAll();
+
+                 Date activityTime=new Date(119,4,18,14,46,6);
+                Date fromTime=new Date(119,4,18,13,46,6);
+                // https://docs.oracle.com/javase/7/docs/api/java/util/Date.html
+                DetectedActivities testActivity1=
+                        new DetectedActivities
+                                (new String("RUNNING"),8,0,Lat,Lon,elevation,activityTime);
+                DetectedActivities testActivity2=
+                        new DetectedActivities
+                                (new String("RUNNING"),8,1,Lat,Lon,elevation,new Date());
+
+                database.activityDao().insertActivity(testActivity1);
+                database.activityDao().insertActivity(testActivity2);
+
+                List<DetectedActivities> resultActivities=database.activityDao().getAll();
+                List<DetectedActivities> last24HoursActivity=
+                        database.activityDao().getActivitiesBetweenDates(fromTime,new Date());
+
+                double resultCaloriesConsumption=getCaloriesConsumptionBetweenDates(fromTime,new Date());
+
+                textView4.setText(String.valueOf(resultCaloriesConsumption));
             }
         });
     }
+
+    private double getCaloriesConsumptionBetweenDates(Date from,Date to){
+        double caloriesConsumption=0;
+        List<DetectedActivities> listActivitiesBetweenDates=database.activityDao().getActivitiesBetweenDates(from,to);
+        for(int i=0; i<listActivitiesBetweenDates.size()-1;i++){
+
+            if(listActivitiesBetweenDates.get(i).getDetectedActivityId()
+                    ==listActivitiesBetweenDates.get(i+1).getDetectedActivityId()) {
+                if (listActivitiesBetweenDates.get(i).getTransitionType() == 0
+                        && listActivitiesBetweenDates.get(i+1).getTransitionType() == 1) {
+                    caloriesConsumption=caloriesConsumption+
+                            getCaloriesForTransitionActivity(listActivitiesBetweenDates.get(i),listActivitiesBetweenDates.get(i+1));
+
+                }
+            }
+        }
+        return caloriesConsumption;
+    }
+
+    private double getCaloriesForTransitionActivity(DetectedActivities activityEnter,DetectedActivities activityExit){
+        double elevationDifference=1;
+
+         if(Math.abs(activityEnter.getElevation()-activityExit.getElevation())>1){
+             elevationDifference=activityEnter.getElevation()-activityExit.getElevation();
+         }
+
+         long durationOfTransitionInMinutes=TimeUnit.MILLISECONDS.toMinutes(activityExit.getTime().getTime()
+                 -activityEnter.getTime().getTime());
+
+         double valueMETofTransition= database.valueDao().getValueMETById(activityEnter.getDetectedActivityId()).getValueMET();
+         double RMRinMinute= mRMR/1440;
+
+         //TODO: ELEVATION AFFECTION
+
+         double caloriesForTransition=durationOfTransitionInMinutes * valueMETofTransition * RMRinMinute * elevationDifference;
+
+        return caloriesForTransition;
+    }
+
 
     public void getCurrentLocation() {
         if (ActivityCompat.checkSelfPermission(MainActivity.this, ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ) {
@@ -152,7 +215,7 @@ public class MainActivity extends AppCompatActivity {
         double longitude = mLastLocation.getLongitude();
         double latitude = mLastLocation.getLatitude();
         //double[] result={latitude,longitude};
-
+        //TODO: IMPROVE GETTING LOCATION
 
         /*locationClient.getLastLocation().addOnSuccessListener(MainActivity.this, new OnSuccessListener<Location>() {
             @Override
@@ -233,23 +296,24 @@ public class MainActivity extends AppCompatActivity {
         database.valueDao().insertMETValue(ON_BICYCLE);
 
 
+
     }
 
     /*sex is int: -1 not given,0 male,1 female
     weight in kg
     heilght in cm*/
-    public int countRMRUsingMifflinJeorEquation(int sex,double weight,double height,int age){
-        int RMR=0;
+    public double countRMRUsingMifflinJeorEquation(int sex,double weight,double height,int age){
+        mRMR=1;
      if(sex!=-1 && weight>0 && height>0&& age>0 ) {
          if (sex == 0) {
-             RMR = (int) (9.99 * weight + 6.25 * height - 4.92 * age + 5); //male
+             mRMR = (int) (9.99 * weight + 6.25 * height - 4.92 * age + 5); //male
          } else if (sex == 1) {
-             RMR = (int) (9.99 * weight + 6.25 * height - 4.92 * age - 161); //female
+             mRMR = (int) (9.99 * weight + 6.25 * height - 4.92 * age - 161); //female
          }
      }
      else{
      throw new InvalidParameterException() ;}
-     return RMR;
+     return mRMR;
     }
 
     @Override
