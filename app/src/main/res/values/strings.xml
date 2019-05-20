@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">GetDeviceLocation2</string>
+    <string name="title_activity_find_rmr">findBMR</string>
 </resources>

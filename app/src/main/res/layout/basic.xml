@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/basic"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#ffffff"
+    tools:context=".MainActivity">
+
+    <TextView
+        android:id="@+id/location"
+        android:text="Location :"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"  />
+
+    <TextView
+        android:id="@+id/elevation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Elevation :"
+        android:layout_marginTop="33dp"
+       />
+
+
+    <TextView
+        android:id="@+id/action"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="39dp"
+        android:layout_marginEnd="31dp"
+        android:text="action"
+        android:layout_below="@+id/elevation"
+
+        />
+
+    <TextView
+        android:id="@+id/calorieConsumption"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Your calories consuption: "
+        android:layout_marginTop="33dp"
+        android:layout_below="@+id/action"
+         />
+
+    <Button
+        android:text="Calculate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingLeft="20dp"
+        android:paddingRight="20dp"
+        android:id="@+id/CalcActivity"
+        android:background="@drawable/button"
+        android:layout_marginTop="39dp"
+        android:layout_below="@+id/calorieConsumption"
+        android:layout_centerHorizontal="true" />
+
+</RelativeLayout>

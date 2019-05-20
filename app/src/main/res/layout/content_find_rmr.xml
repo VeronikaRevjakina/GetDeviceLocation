@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/content_find_bmr"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#ffffff"
+    tools:context=".MainActivity">
+
+
+    <EditText
+        android:layout_width="100dp"
+        android:layout_height="50dp"
+        android:id="@+id/heightEdit"
+        android:inputType="number"
+        android:layout_alignBaseline="@+id/heightTextView"
+        android:layout_alignBottom="@+id/heightTextView"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="33dp" />
+
+
+    <TextView
+        android:text="Your weight"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/heightEdit"
+        android:layout_alignStart="@+id/heightTextView"
+        android:layout_marginTop="33dp"
+        android:id="@+id/weightTextView" />
+
+    <EditText
+        android:layout_width="100dp"
+        android:layout_height="50dp"
+        android:id="@+id/ageEdit"
+        android:inputType="number"
+        android:layout_alignBaseline="@+id/ageTextView"
+        android:layout_alignBottom="@+id/ageTextView"
+        android:layout_alignStart="@+id/heightEdit" />
+
+    <EditText
+        android:layout_width="100dp"
+        android:layout_height="50dp"
+        android:id="@+id/weightEdit"
+        android:inputType="number"
+        android:layout_alignBaseline="@+id/weightTextView"
+        android:layout_alignBottom="@+id/weightTextView"
+        android:layout_alignStart="@+id/heightEdit" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="50dp"
+        android:textSize="20dp"
+        android:textAlignment="center"
+        android:text=" "
+        android:id="@+id/resultCal"
+        android:layout_marginTop="58dp"
+        android:layout_below="@+id/buttonCaclRMR"
+        android:layout_centerHorizontal="true" />
+
+    <TextView
+        android:text="Your age"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/ageTextView"
+        android:layout_marginTop="39dp"
+        android:layout_marginEnd="31dp"
+        android:layout_below="@+id/textView"
+        android:layout_toStartOf="@+id/buttonCaclRMR" />
+
+    <TextView
+        android:text="Your height"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="33dp"
+        android:id="@+id/heightTextView"
+        android:layout_below="@+id/ageEdit"
+        android:layout_alignStart="@+id/ageTextView" />
+
+    <TextView
+        android:text="Calculate RMR based on your parameters"
+        android:textStyle="bold"
+        android:textAllCaps="true"
+        android:textSize="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/textView"
+        android:layout_marginTop="45dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignStart="@+id/ageTextView" />
+
+    <Button
+        android:text="Calculate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingLeft="20dp"
+        android:paddingRight="20dp"
+        android:id="@+id/buttonCaclRMR"
+        android:background="@drawable/button"
+        android:layout_marginTop="39dp"
+        android:layout_below="@+id/weightEdit"
+        android:layout_centerHorizontal="true" />
+</RelativeLayout>

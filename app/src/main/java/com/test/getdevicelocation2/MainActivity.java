@@ -17,6 +17,7 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 
 
@@ -60,12 +61,14 @@ public class MainActivity extends AppCompatActivity {
     private double mElevation;
     private double mRMR;
 
+
     String contentText = null;
 
     private PendingIntent mPendingIntent;
     private myTransitionReceiver mTransitionsReceiver;
 
-
+    private Button maleButton;
+    private Button femaleButton;
 
     private final String TRANSITION_ACTION_RECEIVER =
             BuildConfig.APPLICATION_ID + "TRANSITION_ACTION_RECEIVER";
@@ -98,23 +101,46 @@ public class MainActivity extends AppCompatActivity {
 
         //mTransitionsReceiver.onReceive(MainActivity.this,intent);
 
+          maleButton=findViewById(R.id.countRMRforMale);
+
+         femaleButton=findViewById(R.id.countRMRforFemale);
+
+        maleButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i=new Intent(v.getContext(),MaleRMRActivity.class);
+                startActivity(i);
+                }
+        });
+
+        femaleButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i=new Intent(v.getContext(),FemaleRMRActivity.class);
+                startActivity(i);
+                }
+        });
+
+
         Button button = findViewById(R.id.getLocation);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
+                Intent i=new Intent(v.getContext(),HeadActivity.class);
+                startActivity(i);
 
                 TextView textView1 = findViewById(R.id.location);
                 TextView textView2 = findViewById(R.id.elevation);
                 TextView textView4 = findViewById(R.id.RMR);
                 //textView1.setText("Location: "+location.toString());
 
-                try {
+                /*try {
                     textView4.setText("RMR is: "+ String.valueOf(
                             countRMRUsingMifflinJeorEquation(1,60,165,21)));
                 } catch (InvalidParameterException e){
                     e.printStackTrace();
-                }
+                }*/
 
 
                 getCurrentLocation();
@@ -166,7 +192,21 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private double getCaloriesConsumptionBetweenDates(Date from,Date to){
+   /* private void getRMRUsingUsersEditParameters(int sex) {
+        EditText ageEdit=findViewById(R.id.ageEdit);
+        EditText heightEdit=findViewById(R.id.heightEdit);
+        EditText weightEdit=findViewById(R.id.weightEdit);
+        TextView resultRMRText=findViewById(R.id.resultRMR);
+
+        int age = Integer.parseInt(ageEdit.getText().toString());
+        double weight=Double.parseDouble(weightEdit.getText().toString());
+        double height=Double.parseDouble(heightEdit.getText().toString());
+
+        double resultRMR=countRMRUsingMifflinJeorEquation(sex,weight,height,age);
+        resultRMRText.setText(String.valueOf(resultRMR));
+    }*/
+
+    public double getCaloriesConsumptionBetweenDates(Date from,Date to){
         double caloriesConsumption=0;
         List<DetectedActivities> listActivitiesBetweenDates=database.activityDao().getActivitiesBetweenDates(from,to);
         for(int i=0; i<listActivitiesBetweenDates.size()-1;i++){
@@ -184,7 +224,7 @@ public class MainActivity extends AppCompatActivity {
         return caloriesConsumption;
     }
 
-    private double getCaloriesForTransitionActivity(DetectedActivities activityEnter,DetectedActivities activityExit){
+    public double getCaloriesForTransitionActivity(DetectedActivities activityEnter,DetectedActivities activityExit){
         double elevationDifference=1;
 
          if(Math.abs(activityEnter.getElevation()-activityExit.getElevation())>1){
@@ -476,6 +516,25 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }
+    }
+
+    public double getmRMR() {
+        return mRMR;
+    }
+
+    public Location getmLastLocation() {
+
+        return mLastLocation;
+    }
+
+    public double getmElevation() {
+
+        return mElevation;
+    }
+
+    public AppDatabase getDatabase() {
+
+        return database;
     }
 
     @Override

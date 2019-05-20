@@ -21,6 +21,25 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".MaleRMRActivity"
+            android:label="@string/title_activity_find_rmr"
+            android:configChanges="orientation"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme" />
+        <activity android:name=".FemaleRMRActivity"
+            android:label="findRMRFemale"
+            android:configChanges="orientation"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme" />
+
+        <activity android:name=".HeadActivity"
+        android:label="basic"
+        android:configChanges="orientation"
+        android:screenOrientation="portrait"
+        android:theme="@style/AppTheme" >
+
+        </activity>
         <receiver android:name=".MainActivity$myTransitionReceiver"
             android:exported="false"
             android:permission="com.google.android.gms.permission.ACTIVITY_RECOGNITION">
