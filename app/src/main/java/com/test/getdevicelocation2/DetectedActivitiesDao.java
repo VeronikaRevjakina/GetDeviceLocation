@@ -6,15 +6,25 @@ import android.arch.persistence.room.Dao;
 import android.arch.persistence.room.Insert;
 import android.arch.persistence.room.Query;
 import android.arch.persistence.room.Delete;
+import android.arch.persistence.room.TypeConverters;
 
 
+import java.util.Date;
 import java.util.List;
 
 @Dao
+@TypeConverters({DateConverter.class})
 public interface DetectedActivitiesDao {
 
     @Query("SELECT * FROM activities")
     List<DetectedActivities> getAll();
+
+    //@TypeConverters({DateConverter.class})
+    //Long checkTime=DateConverter.dateToTimestamp(new Date());
+    // https://www.sqlitetutorial.net/sqlite-date/   https://www.sqlite.org/lang_datefunc.html
+
+    @Query("SELECT * FROM activities WHERE  time BETWEEN :from AND :to ; ") //datetime('now','-1 day')
+    List<DetectedActivities> getActivitiesBetweenDates(Date from,Date to);
 
     @Insert()
     void insertActivity(DetectedActivities activity);
