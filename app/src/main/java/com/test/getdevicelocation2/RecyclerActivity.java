@@ -31,7 +31,7 @@ public class RecyclerActivity extends MainActivity {
         mRecyclerView.setLayoutManager(layoutManager);
 
         Date fromTime=new Date();
-        fromTime.setHours(new Date().getHours()-2);
+        fromTime.setHours(new Date().getHours()-24);
         //List<DetectedActivities> last24HoursActivity=
                // getDatabase().activityDao().getActivitiesBetweenDates(fromTime,new Date());
 

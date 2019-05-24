@@ -47,6 +47,7 @@ public class MaleRMRActivity extends MainActivity {
             if(ageEdit.getText().length()!=1 & heightEdit.getText().length()!=1 & weightEdit.getText().length()!=1) {
                 double resultRMR=countRMRUsingMifflinJeorEquation(sex,weight,height,age);
                 resultRMRText.setText(String.valueOf(resultRMR));
+                setRMR(resultRMR);
             }
             else{
                 Toast.makeText(MaleRMRActivity.this, "Incorrect data.", Toast.LENGTH_SHORT).show();

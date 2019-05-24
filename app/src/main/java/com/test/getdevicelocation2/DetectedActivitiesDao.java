@@ -26,6 +26,10 @@ public interface DetectedActivitiesDao {
     @Query("SELECT * FROM activities WHERE  time BETWEEN :from AND :to ; ") //datetime('now','-1 day')
     List<DetectedActivities> getActivitiesBetweenDates(Date from,Date to);
 
+    @Query("SELECT * FROM activities WHERE Id=:id ")
+    DetectedActivities getActivityById(int id);
+
+
     @Query("SELECT * FROM activities WHERE Id=:id AND Id=:id-1 ORDER BY Id DESC")
     List<DetectedActivities> getListActivitiesById(int id);
 

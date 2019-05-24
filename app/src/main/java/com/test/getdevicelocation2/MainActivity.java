@@ -247,7 +247,9 @@ public class MainActivity extends AppCompatActivity {
 
          double valueMETofTransition= database.valueDao().getValueMETById(activityEnter.getDetectedActivityId()).getValueMET();
          double correctedValueMETofTransition=correctValueMETBasedOnSlopeAndSpeed(valueMETofTransition,slope,speed);
-         double RMRinMinute= mRMR/1440;
+         //TODO IMPROVE HERE
+         if(getmRMR()==0.0){countRMRUsingMifflinJeorEquation(1,60,165,21);}
+         double RMRinMinute= getmRMR()/1440;
 
 
 
@@ -596,6 +598,9 @@ public class MainActivity extends AppCompatActivity {
 
     public double getmRMR() {
         return mRMR;
+    }
+    public void setRMR(double rmr){
+        mRMR=rmr;
     }
 
     public Location getmLastLocation() {
