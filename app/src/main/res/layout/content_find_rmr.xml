@@ -36,6 +36,15 @@
         android:layout_alignBaseline="@+id/ageTextView"
         android:layout_alignBottom="@+id/ageTextView"
         android:layout_alignStart="@+id/heightEdit" />
+    <TextView
+        android:text="Your age"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/ageTextView"
+        android:layout_marginTop="39dp"
+        android:layout_marginEnd="31dp"
+        android:layout_below="@+id/textView"
+        android:layout_toStartOf="@+id/buttonCaclRMR" />
 
     <EditText
         android:layout_width="100dp"
@@ -57,15 +66,7 @@
         android:layout_below="@+id/buttonCaclRMR"
         android:layout_centerHorizontal="true" />
 
-    <TextView
-        android:text="Your age"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/ageTextView"
-        android:layout_marginTop="39dp"
-        android:layout_marginEnd="31dp"
-        android:layout_below="@+id/textView"
-        android:layout_toStartOf="@+id/buttonCaclRMR" />
+
 
     <TextView
         android:text="Your height"

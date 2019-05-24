@@ -4,18 +4,22 @@ package com.test.getdevicelocation2;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Button;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class HeadActivity extends MainActivity {
 
     private Button buttonCalcActivity;
+    private Button getActivityListRecyclerButton;
     private TextView locationText;
     private TextView elevationText;
     private TextView actionText;
     private TextView caloriesConsumptionText;
+    private EditText timeEdit;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,6 +31,16 @@ public class HeadActivity extends MainActivity {
         elevationText = findViewById(R.id.elevation);
         actionText=findViewById(R.id.action);
         caloriesConsumptionText = findViewById(R.id.calorieConsumption);
+        timeEdit=findViewById(R.id.timeEdit);
+
+        getActivityListRecyclerButton=findViewById(R.id.getActivityListRecyclerView);
+
+        getActivityListRecyclerButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i=new Intent(v.getContext(),RecyclerActivity.class);
+                startActivity(i);
+            }});
 
     //textView1.setText("Location: "+location.toString());
 
@@ -76,18 +90,37 @@ public class HeadActivity extends MainActivity {
                 List<ValuesMET> valuesMET=getDatabase().valueDao().getAllValues();
                 List<DetectedActivities> activities=getDatabase().activityDao().getAll();
 
-                Date activityTime=new Date(119,4,18,14,46,6);
-                Date fromTime=new Date(119,4,18,13,46,6);
+                //Date activityTime=new Date(119,4,24,9,46,6);
+                //Date fromTime=new Date(119,4,18,13,46,6);
+
+                Date fromTime=new Date();
+                int hours=Integer.parseInt(timeEdit.getText().toString());
+                fromTime.setHours(fromTime.getHours()-hours);
+
+                Date timeMinus1Hour=new Date();
+                timeMinus1Hour.setHours(timeMinus1Hour.getHours()-1);
+
                 // https://docs.oracle.com/javase/7/docs/api/java/util/Date.html
                 DetectedActivities testActivity1=
                         new DetectedActivities
-                                (new String("RUNNING"),8,0,Lat,Lon,elevation,activityTime);
+                                (new String("WALKING"),7,0,
+                                        Lat+30,Lon-30,elevation-100,timeMinus1Hour);
                 DetectedActivities testActivity2=
                         new DetectedActivities
-                                (new String("RUNNING"),8,1,Lat,Lon,elevation,new Date());
+                                (new String("WALKING"),7,1,Lat,Lon,elevation,new Date());
                 AppDatabase database=getDatabase();
                 database.activityDao().insertActivity(testActivity1);
                 database.activityDao().insertActivity(testActivity2);
+
+               DetectedActivities lastActivity=database.activityDao().getLastActivity();
+
+
+               List<DetectedActivities> twoLastActivities=database.activityDao().getTwoLastActivities();
+                long durationBetweenTwoLastActivitiesInMinutes= TimeUnit.MILLISECONDS.toMinutes
+                        (twoLastActivities.get(0).getTime().getTime()-twoLastActivities.get(1).getTime().getTime());
+
+                actionText.setText("Recent activity : " +String.valueOf(durationBetweenTwoLastActivitiesInMinutes)+ " min "
+                        + lastActivity.getDetectedActivity());
 
                 List<DetectedActivities> resultActivities=database.activityDao().getAll();
                 List<DetectedActivities> last24HoursActivity=
@@ -95,7 +128,10 @@ public class HeadActivity extends MainActivity {
 
                 double resultCaloriesConsumption=getCaloriesConsumptionBetweenDates(fromTime,new Date());
 
-                caloriesConsumptionText.setText(String.valueOf(resultCaloriesConsumption));
+                caloriesConsumptionText.setText("Calries consumprion for your interval :"+
+                        String.valueOf(resultCaloriesConsumption));
+
+
             }
         });
 }

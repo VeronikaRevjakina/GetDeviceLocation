@@ -37,7 +37,19 @@
         android:label="basic"
         android:configChanges="orientation"
         android:screenOrientation="portrait"
-        android:theme="@style/AppTheme" >
+        android:theme="@style/AppTheme" />
+
+        <activity android:name=".RecyclerActivity"
+            android:label="listActivities"
+            android:configChanges="orientation"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme" />
+
+            <activity android:name=".SingleDetectedActivity"
+                android:label="chosenActivity"
+                android:configChanges="orientation"
+                android:screenOrientation="portrait"
+                android:theme="@style/AppTheme" >
 
         </activity>
         <receiver android:name=".MainActivity$myTransitionReceiver"

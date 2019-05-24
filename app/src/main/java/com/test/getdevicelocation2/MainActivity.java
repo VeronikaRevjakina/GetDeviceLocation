@@ -178,8 +178,8 @@ public class MainActivity extends AppCompatActivity {
                         new DetectedActivities
                                 (new String("RUNNING"),8,1,Lat,Lon,elevation,new Date());
 
-                database.activityDao().insertActivity(testActivity1);
-                database.activityDao().insertActivity(testActivity2);
+                //database.activityDao().insertActivity(testActivity1);
+                //database.activityDao().insertActivity(testActivity2);
 
                 List<DetectedActivities> resultActivities=database.activityDao().getAll();
                 List<DetectedActivities> last24HoursActivity=
@@ -226,6 +226,15 @@ public class MainActivity extends AppCompatActivity {
 
     public double getCaloriesForTransitionActivity(DetectedActivities activityEnter,DetectedActivities activityExit){
         double elevationDifference=1;
+        //TODO: ELEVATION AFFECTION
+        double height=activityEnter.getElevation()-activityExit.getElevation();
+        double flatDistance=getFlatDistance
+                (activityEnter.getLatitude(),activityEnter.getLongitude(),activityExit.getLatitude(),activityExit.getLongitude());
+        double distance=getDistance
+                (activityEnter.getLatitude(),activityEnter.getLongitude(),activityExit.getLatitude(),activityExit.getLongitude(),
+                        activityEnter.getElevation(),activityExit.getElevation());
+
+        double slope=getPercentSlope(flatDistance,height);
 
          if(Math.abs(activityEnter.getElevation()-activityExit.getElevation())>1){
              elevationDifference=activityEnter.getElevation()-activityExit.getElevation();
@@ -234,14 +243,81 @@ public class MainActivity extends AppCompatActivity {
          long durationOfTransitionInMinutes=TimeUnit.MILLISECONDS.toMinutes(activityExit.getTime().getTime()
                  -activityEnter.getTime().getTime());
 
+         double speed=getSpeed(distance,durationOfTransitionInMinutes);
+
          double valueMETofTransition= database.valueDao().getValueMETById(activityEnter.getDetectedActivityId()).getValueMET();
+         double correctedValueMETofTransition=correctValueMETBasedOnSlopeAndSpeed(valueMETofTransition,slope,speed);
          double RMRinMinute= mRMR/1440;
 
-         //TODO: ELEVATION AFFECTION
+
 
          double caloriesForTransition=durationOfTransitionInMinutes * valueMETofTransition * RMRinMinute * elevationDifference;
 
         return caloriesForTransition;
+    }
+
+    public double correctValueMETBasedOnSlopeAndSpeed(double valueMETofTransition,double slope,double speed){
+        double correctValueMET=valueMETofTransition;
+        if( slope>0 && slope<0.1){
+            correctValueMET=5;
+        }
+        if( slope> 0.1 && slope<0.2){
+            correctValueMET=8.5;
+        }
+//TODO ADD ANOTHER SLOPE VALUES AND CORRECTION
+        return correctValueMET;
+    }
+
+    public double getDistance(double lat1, double lat2, double lon1,
+                                  double lon2, double elev1, double elev2) {
+
+        double distance = getFlatDistance(lat1, lat2, lon1, lon2);
+         if(distance !=0){
+        double height = elev1 - elev2;
+
+        double distanceFull = Math.pow(distance, 2) + Math.pow(height, 2);
+
+        return Math.sqrt(distanceFull);}
+        return 0.0;
+    }
+
+//https://www.e-education.psu.edu/natureofgeoinfo/book/export/html/1837
+    public double getDegreeSlope(double distance,double height){
+        if(distance!=0){
+        double slopeDegree=Math.tanh(height/distance);
+        return slopeDegree;}
+        return 0.0;
+    }
+
+    public double getPercentSlope(double distance,double height){
+        if(distance!=0){
+        double slopePersent=(height/distance);
+        return slopePersent;}
+        return 0.0;
+    }
+
+    public double getSpeed(double distance,double duration){
+        if(duration!=0) {
+            return distance / duration; //meters/sec
+        }
+            return 0.0;
+    }
+
+    //Harvesine method
+    public double getFlatDistance(double lat1, double lon1, double lat2, double lon2) {
+       float[] result = new float[1];
+        Location.distanceBetween(lat1,lon1,lat2,lon2,result);
+        return (double) result[0];
+        /*final int R = 6371; // Radius of the earth
+
+        double latDistance = Math.toRadians(lat2 - lat1);
+        double lonDistance = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        double flatDistance=R * c * 1000;
+        return flatDistance;*/
     }
 
 

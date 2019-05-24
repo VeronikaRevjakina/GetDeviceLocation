@@ -11,7 +11,9 @@
         android:id="@+id/location"
         android:text="Location :"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"  />
+        android:layout_height="wrap_content"
+        android:textSize="16dp"
+        android:textStyle="bold" />
 
     <TextView
         android:id="@+id/elevation"
@@ -19,7 +21,9 @@
         android:layout_height="wrap_content"
         android:text="Elevation :"
         android:layout_marginTop="33dp"
-       />
+        android:textSize="16dp"
+        android:textStyle="bold"
+        />
 
 
     <TextView
@@ -30,6 +34,8 @@
         android:layout_marginEnd="31dp"
         android:text="action"
         android:layout_below="@+id/elevation"
+        android:textSize="16dp"
+        android:textStyle="bold"
 
         />
 
@@ -40,6 +46,27 @@
         android:text="Your calories consuption: "
         android:layout_marginTop="33dp"
         android:layout_below="@+id/action"
+        android:textSize="16dp"
+        android:textStyle="bold"
+        />
+    <EditText
+        android:layout_width="100dp"
+        android:layout_height="50dp"
+        android:id="@+id/timeEdit"
+        android:inputType="number"
+        android:layout_alignBaseline="@+id/timeTextView"
+        android:layout_alignBottom="@+id/location"
+        android:layout_alignStart="@+id/location"
+       />
+    <TextView
+        android:text="Enter period(hours) : "
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/timeTextView"
+        android:layout_marginTop="39dp"
+        android:layout_marginEnd="31dp"
+        android:layout_below="@+id/location"
+
          />
 
     <Button
@@ -52,6 +79,17 @@
         android:background="@drawable/button"
         android:layout_marginTop="39dp"
         android:layout_below="@+id/calorieConsumption"
+        android:layout_centerHorizontal="true" />
+    <Button
+        android:text="Get activity list"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingLeft="20dp"
+        android:paddingRight="20dp"
+        android:id="@+id/getActivityListRecyclerView"
+        android:background="@drawable/button"
+        android:layout_marginTop="39dp"
+        android:layout_below="@+id/CalcActivity"
         android:layout_centerHorizontal="true" />
 
 </RelativeLayout>
