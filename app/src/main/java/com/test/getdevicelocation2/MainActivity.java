@@ -90,14 +90,19 @@ public class MainActivity extends AppCompatActivity {
         mTransitionsReceiver = new myTransitionReceiver();
         registerReceiver(mTransitionsReceiver, new IntentFilter(TRANSITION_ACTION_RECEIVER));
 
-        database=AppDatabase.getDatabaseInstance(this);
-
         new Thread(new Runnable() {
+            @Override
+            public void run() {
+                database = AppDatabase.getDatabaseInstance(getApplicationContext());
+            }
+        }).start();
+
+        /*new Thread(new Runnable() {
             @Override
             public void run() {
                 prepareValuesMETContent();
             }
-        }) .start();
+        }) .start();*/
 
         //mTransitionsReceiver.onReceive(MainActivity.this,intent);
 
