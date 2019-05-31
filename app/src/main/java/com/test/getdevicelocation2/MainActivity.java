@@ -1,5 +1,6 @@
 package com.test.getdevicelocation2;
 
+import android.Manifest;
 import android.app.PendingIntent;
 import android.arch.persistence.room.Room;
 import android.content.BroadcastReceiver;
@@ -11,6 +12,7 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.AsyncTask;
 
+import android.os.Looper;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -19,6 +21,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 
 import com.google.ads.mediation.MediationServerParameters;
@@ -30,7 +33,13 @@ import com.google.android.gms.location.ActivityTransitionRequest;
 import com.google.android.gms.location.ActivityTransitionResult;
 import com.google.android.gms.location.DetectedActivity;
 import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.SettingsClient;
+import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
@@ -53,10 +62,17 @@ import org.json.*;
 import javax.net.ssl.HttpsURLConnection;
 
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
+import static com.google.android.gms.location.LocationServices.getFusedLocationProviderClient;
 
 public class MainActivity extends AppCompatActivity {
 
+
+    private long UPDATE_INTERVAL = 10 * 1000;  /* 10 secs */
+    private long FASTEST_INTERVAL = 2000; /* 2 sec */
+
+
     private FusedLocationProviderClient locationClient;
+    private LocationRequest mLocationRequest;
     private Location mLastLocation;
     private double mElevation;
     private double mRMR;
@@ -82,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         requestPermission();
-        locationClient = LocationServices.getFusedLocationProviderClient(this);
+        locationClient = getFusedLocationProviderClient(this);
 
         Intent intent = new Intent(TRANSITION_ACTION_RECEIVER);
         mPendingIntent = PendingIntent.getBroadcast(MainActivity.this, 0, intent, 0);
@@ -100,30 +116,31 @@ public class MainActivity extends AppCompatActivity {
         /*new Thread(new Runnable() {
             @Override
             public void run() {
-                prepareValuesMETContent();
+                startLocationUpdates();
             }
-        }) .start();*/
+        }).start();*/
+        startLocationUpdates();
 
         //mTransitionsReceiver.onReceive(MainActivity.this,intent);
 
-          maleButton=findViewById(R.id.countRMRforMale);
+        maleButton = findViewById(R.id.countRMRforMale);
 
-         femaleButton=findViewById(R.id.countRMRforFemale);
+        femaleButton = findViewById(R.id.countRMRforFemale);
 
         maleButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i=new Intent(v.getContext(),MaleRMRActivity.class);
+                Intent i = new Intent(v.getContext(), MaleRMRActivity.class);
                 startActivity(i);
-                }
+            }
         });
 
         femaleButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i=new Intent(v.getContext(),FemaleRMRActivity.class);
+                Intent i = new Intent(v.getContext(), FemaleRMRActivity.class);
                 startActivity(i);
-                }
+            }
         });
 
 
@@ -132,7 +149,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-                Intent i=new Intent(v.getContext(),HeadActivity.class);
+                Intent i = new Intent(v.getContext(), HeadActivity.class);
                 startActivity(i);
 
                 TextView textView1 = findViewById(R.id.location);
@@ -149,53 +166,96 @@ public class MainActivity extends AppCompatActivity {
 
 
                 getCurrentLocation();
-                countRMRUsingMifflinJeorEquation(1,60,165,21);
+                countRMRUsingMifflinJeorEquation(1, 60, 165, 21);
                 //if(mLastLocation!=null) {
-                    double Lon = mLastLocation.getLongitude();
-                    double Lat = mLastLocation.getLatitude();
+                double Lon = mLastLocation.getLongitude();
+                double Lat = mLastLocation.getLatitude();
 
-                    String time = getCurrentTime();
-                    textView1.setText("Latitude: " + String.valueOf(Lat) + "   Longitude: " + String.valueOf(Lon) + "   Time:" + time);
+                String time = getCurrentTime();
+                textView1.setText("Latitude: " + String.valueOf(Lat) + "   Longitude: " + String.valueOf(Lon) + "   Time:" + time);
 
-                    double elevation;
+                double elevation;
 
-                    if (getElevation(Lat,Lon)!=0.0){
-                        elevation=getElevation(Lat,Lon);}
-                    elevation=mElevation;
+                if (getElevation(Lat, Lon) != 0.0) {
+                    elevation = getElevation(Lat, Lon);
+                }
+                elevation = mElevation;
 
-                    textView2.setText("Elevation: " + String.valueOf(elevation));
+                textView2.setText("Elevation: " + String.valueOf(elevation));
 
 
                 //}
                 //else textView1.setText("Location is unknown");
 
 
-                List<ValuesMET> valuesMET=database.valueDao().getAllValues();
-                List<DetectedActivities> activities=database.activityDao().getAll();
+                List<ValuesMET> valuesMET = database.valueDao().getAllValues();
+                List<DetectedActivities> activities = database.activityDao().getAll();
 
-                 Date activityTime=new Date(119,4,18,14,46,6);
-                Date fromTime=new Date(119,4,18,13,46,6);
+                Date activityTime = new Date(119, 4, 18, 14, 46, 6);
+                Date fromTime = new Date(119, 4, 18, 13, 46, 6);
                 // https://docs.oracle.com/javase/7/docs/api/java/util/Date.html
-                DetectedActivities testActivity1=
+                DetectedActivities testActivity1 =
                         new DetectedActivities
-                                (new String("RUNNING"),8,0,Lat,Lon,elevation,activityTime);
-                DetectedActivities testActivity2=
+                                (new String("RUNNING"), 8, 0, Lat, Lon, elevation, activityTime);
+                DetectedActivities testActivity2 =
                         new DetectedActivities
-                                (new String("RUNNING"),8,1,Lat,Lon,elevation,new Date());
+                                (new String("RUNNING"), 8, 1, Lat, Lon, elevation, new Date());
 
                 //database.activityDao().insertActivity(testActivity1);
                 //database.activityDao().insertActivity(testActivity2);
 
-                List<DetectedActivities> resultActivities=database.activityDao().getAll();
-                List<DetectedActivities> last24HoursActivity=
-                        database.activityDao().getActivitiesBetweenDates(fromTime,new Date());
+                List<DetectedActivities> resultActivities = database.activityDao().getAll();
+                List<DetectedActivities> last24HoursActivity =
+                        database.activityDao().getActivitiesBetweenDates(fromTime, new Date());
 
-                double resultCaloriesConsumption=getCaloriesConsumptionBetweenDates(fromTime,new Date());
+                double resultCaloriesConsumption = getCaloriesConsumptionBetweenDates(fromTime, new Date());
 
                 textView4.setText(String.valueOf(resultCaloriesConsumption));
             }
         });
     }
+
+    protected void startLocationUpdates() {
+
+        // Create the location request to start receiving updates
+        mLocationRequest = LocationRequest.create();
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        mLocationRequest.setInterval(UPDATE_INTERVAL);
+        mLocationRequest.setFastestInterval(FASTEST_INTERVAL);
+
+        // Create LocationSettingsRequest object using location request
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
+        builder.addLocationRequest(mLocationRequest);
+        LocationSettingsRequest locationSettingsRequest = builder.build();
+
+        // Check whether location settings are satisfied
+        // https://developers.google.com/android/reference/com/google/android/gms/location/SettingsClient
+        SettingsClient settingsClient = LocationServices.getSettingsClient(this);
+        settingsClient.checkLocationSettings(locationSettingsRequest);
+
+        // new Google API SDK v11 uses getFusedLocationProviderClient(this)
+        if (ActivityCompat.checkSelfPermission(MainActivity.this, ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ) {
+
+        }
+        locationClient.requestLocationUpdates(mLocationRequest, new LocationCallback() {
+                    @Override
+                    public void onLocationResult(LocationResult locationResult) {
+                        // do work here
+                        onLocationChanged(locationResult.getLastLocation());
+                    }
+                },
+                Looper.myLooper());
+    }
+    public void onLocationChanged(Location location) {
+        // New location has now been determined
+        String msg = "Updated Location: " +
+                Double.toString(location.getLatitude()) + "," +
+                Double.toString(location.getLongitude());
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+        // You can now create a LatLng Object for use with maps
+        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+    }
+
 
    /* private void getRMRUsingUsersEditParameters(int sex) {
         EditText ageEdit=findViewById(R.id.ageEdit);
@@ -333,14 +393,14 @@ public class MainActivity extends AppCompatActivity {
 
         }
 
-        LocationManager mLocationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
+        /*LocationManager mLocationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
         mLastLocation = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
         double longitude = mLastLocation.getLongitude();
         double latitude = mLastLocation.getLatitude();
         //double[] result={latitude,longitude};
-        //TODO: IMPROVE GETTING LOCATION
+        //TODO: IMPROVE GETTING LOCATION*/
 
-        /*locationClient.getLastLocation().addOnSuccessListener(MainActivity.this, new OnSuccessListener<Location>() {
+        locationClient.getLastLocation().addOnSuccessListener(MainActivity.this, new OnSuccessListener<Location>() {
             @Override
             public void onSuccess(Location location) {
              if(location !=null) {
@@ -348,7 +408,7 @@ public class MainActivity extends AppCompatActivity {
 
                  double Lat=location.getLatitude();
                  double Lon=location.getLongitude();
-
+                 mLastLocation=location;
 
                  Date date = new Date(location.getTime());
                  SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
@@ -356,7 +416,7 @@ public class MainActivity extends AppCompatActivity {
 
                  }
             }
-        }); */
+        });
 
     }
 
@@ -581,13 +641,21 @@ public class MainActivity extends AppCompatActivity {
                       elevation=getElevation(latitude,longitude);}
                      elevation=mElevation;
 
+
+
                     DetectedActivities lastActivity =
                             new DetectedActivities(theActivity,activityType,transitionType,latitude,longitude,elevation,new Date());
-
                     database.activityDao().insertActivity(lastActivity);
 
+                    /*new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            DetectedActivities lastActivity =
+                                    new DetectedActivities(theActivity,activityType,transitionType,latitude,longitude,elevation,new Date());
 
-
+                            database.activityDao().insertActivity(lastActivity);
+                        }
+                    }).start();*/
 
 
 
