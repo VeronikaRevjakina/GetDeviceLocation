@@ -29,7 +29,8 @@ public class SingleDetectedActivity extends MainActivity {
         //List<DetectedActivities> currentAndLastActivity=getDatabase().activityDao().getListActivitiesById(activityId);
         double calorieConsumptionSingleAction=getCaloriesForTransitionActivity
                 (previousActivity,currentActivity);
-        calorieConsumptionSingleActionText.setText(String.valueOf(calorieConsumptionSingleAction));
+        calorieConsumptionSingleActionText.setText("Calories consumption for chosen activity : "+
+                String.valueOf(calorieConsumptionSingleAction));
 
        // calorieConsumptionSingleActionText.setText(String.valueOf(calorieConsumptionSingleAction));
 
@@ -46,8 +47,8 @@ public class SingleDetectedActivity extends MainActivity {
         double height= currentActivity.getElevation()-previousActivity.getElevation();
         double slopeInDegrees=getDegreeSlope(distanceFlat,height);
 
-        singleActionText.setText("Duration :"+String.valueOf(durationBetweenTwoLastActivitiesInMinutes)+
-                "Distance: "+String.valueOf(distanceFull) +"Speed: "+String.valueOf(speed)+"Slope in degrees: "+
+        singleActionText.setText("Duration : "+String.valueOf(durationBetweenTwoLastActivitiesInMinutes)+
+                "  Distance: "+String.valueOf(distanceFull) +"  Speed: "+String.valueOf(speed)+"  Slope in degrees: "+
                 String.valueOf(slopeInDegrees));
 
     }

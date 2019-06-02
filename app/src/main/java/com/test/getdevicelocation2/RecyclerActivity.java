@@ -38,8 +38,12 @@ public class RecyclerActivity extends MainActivity {
         fromTime.setHours(new Date().getHours()-hours);
         //List<DetectedActivities> last24HoursActivity=
                // getDatabase().activityDao().getActivitiesBetweenDates(fromTime,new Date());
-        final List<DetectedActivities> last24HoursActivity=getDatabase().activityDao().getActivitiesBetweenDates(fromTime,new Date());
+
         //final List<DetectedActivities> last24HoursActivity=getDatabase().activityDao().getExitActivitiesBetweenDates(fromTime,new Date());
+
+        final List<DetectedActivities> last24HoursActivity=getDatabase().activityDao().getExitActivitiesBetweenDates(fromTime,new Date());
+
+
         // specify an adapter
         mAdapter = new MyAdapter(this,last24HoursActivity);
         mRecyclerView.addItemDecoration(new DividerItemDecoration(this, LinearLayoutManager.VERTICAL));

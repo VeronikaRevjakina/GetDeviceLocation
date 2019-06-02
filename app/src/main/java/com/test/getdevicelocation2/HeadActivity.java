@@ -40,6 +40,9 @@ public class HeadActivity extends MainActivity {
             public void onClick(View v) {
                 Intent intent=new Intent(v.getContext(),RecyclerActivity.class);
                 String hoursStr=timeEdit.getText().toString();
+                if(hoursStr.trim().length() == 0){
+                    hoursStr="24";
+                }
                 intent.putExtra("hours",hoursStr);
                 startActivity(intent);
             }});
