@@ -8,45 +8,25 @@
     tools:context=".MainActivity">
 
     <TextView
-        android:id="@+id/location"
-        android:text="Location :"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textSize="16dp"
-        android:textStyle="bold" />
-
-    <TextView
-        android:id="@+id/elevation"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Elevation :"
-        android:layout_marginTop="33dp"
-        android:textSize="16dp"
+        android:text="Calories consumption for entered period(hours)"
         android:textStyle="bold"
-        />
-
-
-    <TextView
-        android:id="@+id/action"
+        android:textAllCaps="true"
+        android:textSize="20dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="39dp"
-        android:layout_marginEnd="31dp"
-        android:text="action"
-        android:layout_below="@+id/elevation"
-        android:textSize="16dp"
-        android:textStyle="bold"
-
-        />
+        android:id="@+id/textView"
+        android:layout_marginTop="45dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignStart="@+id/calorieConsumption" />
 
     <TextView
         android:id="@+id/calorieConsumption"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Your calories consuption: "
+        android:text="Your calories consumption: "
         android:layout_marginTop="33dp"
-        android:layout_below="@+id/action"
-        android:textSize="16dp"
+        android:layout_below="@+id/timeEdit"
+        android:textSize="20dp"
         android:textStyle="bold"
         />
     <EditText
@@ -54,9 +34,10 @@
         android:layout_height="50dp"
         android:id="@+id/timeEdit"
         android:inputType="number"
+        android:textSize="16dp"
         android:layout_alignBaseline="@+id/timeTextView"
-        android:layout_alignBottom="@+id/location"
-        android:layout_alignStart="@+id/location"
+        android:layout_alignBottom="@+id/timeTextView"
+        android:layout_alignStart="@+id/calorieConsumption"
        />
     <TextView
         android:text="Enter period(hours) : "
@@ -65,8 +46,8 @@
         android:id="@+id/timeTextView"
         android:layout_marginTop="39dp"
         android:layout_marginEnd="31dp"
-        android:layout_below="@+id/location"
-
+        android:layout_below="@+id/textView"
+        android:layout_toStartOf="@+id/calorieConsumption"
          />
 
     <Button

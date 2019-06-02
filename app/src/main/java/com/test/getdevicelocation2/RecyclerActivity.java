@@ -30,8 +30,12 @@ public class RecyclerActivity extends MainActivity {
         layoutManager = new LinearLayoutManager(this);
         mRecyclerView.setLayoutManager(layoutManager);
 
+
+        Intent intent = getIntent();
+        String hoursStr= intent.getStringExtra("hours");
+        int hours=Integer.parseInt(hoursStr);
         Date fromTime=new Date();
-        fromTime.setHours(new Date().getHours()-24);
+        fromTime.setHours(new Date().getHours()-hours);
         //List<DetectedActivities> last24HoursActivity=
                // getDatabase().activityDao().getActivitiesBetweenDates(fromTime,new Date());
         final List<DetectedActivities> last24HoursActivity=getDatabase().activityDao().getActivitiesBetweenDates(fromTime,new Date());

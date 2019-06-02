@@ -15,9 +15,9 @@ public class HeadActivity extends MainActivity {
 
     private Button buttonCalcActivity;
     private Button getActivityListRecyclerButton;
-    private TextView locationText;
-    private TextView elevationText;
-    private TextView actionText;
+    //private TextView locationText;
+    //private TextView elevationText;
+    //private TextView actionText;
     private TextView caloriesConsumptionText;
     private EditText timeEdit;
 
@@ -27,9 +27,9 @@ public class HeadActivity extends MainActivity {
         setContentView(R.layout.basic);
 
         buttonCalcActivity=findViewById(R.id.CalcActivity);
-        locationText = findViewById(R.id.location);
+       /* locationText = findViewById(R.id.location);
         elevationText = findViewById(R.id.elevation);
-        actionText=findViewById(R.id.action);
+        actionText=findViewById(R.id.action);*/
         caloriesConsumptionText = findViewById(R.id.calorieConsumption);
         timeEdit=findViewById(R.id.timeEdit);
 
@@ -38,8 +38,10 @@ public class HeadActivity extends MainActivity {
         getActivityListRecyclerButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i=new Intent(v.getContext(),RecyclerActivity.class);
-                startActivity(i);
+                Intent intent=new Intent(v.getContext(),RecyclerActivity.class);
+                String hoursStr=timeEdit.getText().toString();
+                intent.putExtra("hours",hoursStr);
+                startActivity(intent);
             }});
 
     //textView1.setText("Location: "+location.toString());
@@ -64,7 +66,7 @@ public class HeadActivity extends MainActivity {
                 }*/
 
 
-                getCurrentLocation();
+                /*getCurrentLocation();
                 //countRMRUsingMifflinJeorEquation(1,60,165,21);
                 //if(mLastLocation!=null) {
 
@@ -80,7 +82,7 @@ public class HeadActivity extends MainActivity {
                     elevation=getElevation(Lat,Lon);}
                 elevation=getmElevation();
 
-                elevationText.setText("Elevation: " + String.valueOf(elevation));
+                elevationText.setText("Elevation: " + String.valueOf(elevation));*/
 
 
                 //}
@@ -106,14 +108,14 @@ public class HeadActivity extends MainActivity {
                 DetectedActivities testActivity2=
                         new DetectedActivities
                                 (new String("WALKING"),7,1,Lat,Lon,elevation,new Date());*/
-                AppDatabase database=getDatabase();
+                //AppDatabase database=getDatabase();
                 //database.activityDao().insertActivity(testActivity1);
                 //database.activityDao().insertActivity(testActivity2);
 
                //DetectedActivities lastActivity=database.activityDao().getLastActivity();
 
 
-               List<DetectedActivities> twoLastActivities=database.activityDao().getTwoLastActivities();
+               /*List<DetectedActivities> twoLastActivities=database.activityDao().getTwoLastActivities();
 
                DetectedActivities previousActivity=twoLastActivities.get(1);
                 DetectedActivities currentActivity=twoLastActivities.get(0);
@@ -126,12 +128,14 @@ public class HeadActivity extends MainActivity {
 
                 double calorieConsumptionForLastActivity=getCaloriesForTransitionActivity
                         (twoLastActivities.get(1),twoLastActivities.get(0));
-                locationText.setText("Calories consumption for last activity  :"+String.valueOf(calorieConsumptionForLastActivity));
+                locationText.setText("Calories consumption for last activity  " +
+                        ":"+String.valueOf(calorieConsumptionForLastActivity)); */
 
                 //List<DetectedActivities> resultActivities=database.activityDao().getAll();
 
                // List<DetectedActivities> last24HoursActivity=
                        // database.activityDao().getActivitiesBetweenDates(fromTime,new Date());
+
 
                 Date fromTime=new Date();
                 int hours=Integer.parseInt(timeEdit.getText().toString());
@@ -139,8 +143,7 @@ public class HeadActivity extends MainActivity {
 
                 double resultCaloriesConsumption=getCaloriesConsumptionBetweenDates(fromTime,new Date());
 
-                caloriesConsumptionText.setText("Calories consumprion for your interval :"+
-                        String.valueOf(resultCaloriesConsumption));
+                caloriesConsumptionText.setText(String.valueOf(resultCaloriesConsumption));
 
 
             }
