@@ -43,7 +43,7 @@ public interface DetectedActivitiesDao {
     void insertActivity(DetectedActivities activity);
 
     @Insert()
-    void insertAllActivities(DetectedActivities... activities);
+    void insertAllActivities(List<DetectedActivities> activities);
 
     @Delete
     void deleteActivity (DetectedActivities activity);

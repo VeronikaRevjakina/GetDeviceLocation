@@ -67,7 +67,7 @@ import static com.google.android.gms.location.LocationServices.getFusedLocationP
 public class MainActivity extends AppCompatActivity {
 
 
-    private long UPDATE_INTERVAL = 10 * 1000;  /* 10 secs */
+    private long UPDATE_INTERVAL = 100 * 1000;  /* 10 secs */
     private long FASTEST_INTERVAL = 2000; /* 2 sec */
 
 
@@ -76,6 +76,7 @@ public class MainActivity extends AppCompatActivity {
     private Location mLastLocation;
     private double mElevation;
     private double mRMR;
+    private List<String> locationUpdatesForTransition;
 
 
     String contentText = null;
@@ -106,6 +107,10 @@ public class MainActivity extends AppCompatActivity {
         mTransitionsReceiver = new myTransitionReceiver();
         registerReceiver(mTransitionsReceiver, new IntentFilter(TRANSITION_ACTION_RECEIVER));
 
+         locationUpdatesForTransition=new ArrayList<String>();
+
+        //database = AppDatabase.getDatabaseInstance(getApplicationContext());
+
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -113,12 +118,9 @@ public class MainActivity extends AppCompatActivity {
             }
         }).start();
 
-        /*new Thread(new Runnable() {
-            @Override
-            public void run() {
-                startLocationUpdates();
-            }
-        }).start();*/
+
+
+
         startLocationUpdates();
 
         //mTransitionsReceiver.onReceive(MainActivity.this,intent);
@@ -188,7 +190,7 @@ public class MainActivity extends AppCompatActivity {
                 //else textView1.setText("Location is unknown");
 
 
-                List<ValuesMET> valuesMET = database.valueDao().getAllValues();
+                /*List<ValuesMET> valuesMET = database.valueDao().getAllValues();
                 List<DetectedActivities> activities = database.activityDao().getAll();
 
                 Date activityTime = new Date(119, 4, 18, 14, 46, 6);
@@ -210,7 +212,7 @@ public class MainActivity extends AppCompatActivity {
 
                 double resultCaloriesConsumption = getCaloriesConsumptionBetweenDates(fromTime, new Date());
 
-                textView4.setText(String.valueOf(resultCaloriesConsumption));
+                textView4.setText(String.valueOf(resultCaloriesConsumption));*/
             }
         });
     }
@@ -247,10 +249,28 @@ public class MainActivity extends AppCompatActivity {
                 Looper.myLooper());
     }
     public void onLocationChanged(Location location) {
+        mLastLocation=location;
+        double latitude=mLastLocation.getLatitude();
+        double longitude=mLastLocation.getLongitude();
+
+        double elevation;
+
+        if (getElevation(latitude,longitude)!=0){
+            elevation=getElevation(latitude,longitude);}
+        elevation=mElevation;
+
+        Date date = new Date(location.getTime());
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
+        String time = dateFormat.format(date);
+
+        locationUpdatesForTransition.add(String.valueOf(latitude));
+        locationUpdatesForTransition.add(String.valueOf(longitude));
+        locationUpdatesForTransition.add(String.valueOf(elevation));
+        locationUpdatesForTransition.add(time);
         // New location has now been determined
         String msg = "Updated Location: " +
                 Double.toString(location.getLatitude()) + "," +
-                Double.toString(location.getLongitude());
+                Double.toString(location.getLongitude() )+ " "+ time;
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
         // You can now create a LatLng Object for use with maps
         LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
@@ -290,8 +310,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public double getCaloriesForTransitionActivity(DetectedActivities activityEnter,DetectedActivities activityExit){
-        double elevationDifference=1;
-        //TODO: ELEVATION AFFECTION
+
         double height=activityEnter.getElevation()-activityExit.getElevation();
         double flatDistance=getFlatDistance
                 (activityEnter.getLatitude(),activityEnter.getLongitude(),activityExit.getLatitude(),activityExit.getLongitude());
@@ -299,26 +318,35 @@ public class MainActivity extends AppCompatActivity {
                 (activityEnter.getLatitude(),activityEnter.getLongitude(),activityExit.getLatitude(),activityExit.getLongitude(),
                         activityEnter.getElevation(),activityExit.getElevation());
 
-        double slope=getPercentSlope(flatDistance,height);
+        double slope=getDegreeSlope(flatDistance,height);
 
-         if(Math.abs(activityEnter.getElevation()-activityExit.getElevation())>1){
-             elevationDifference=activityEnter.getElevation()-activityExit.getElevation();
-         }
+
 
          long durationOfTransitionInMinutes=TimeUnit.MILLISECONDS.toMinutes(activityExit.getTime().getTime()
                  -activityEnter.getTime().getTime());
 
          double speed=getSpeed(distance,durationOfTransitionInMinutes);
 
-         double valueMETofTransition= database.valueDao().getValueMETById(activityEnter.getDetectedActivityId()).getValueMET();
-         double correctedValueMETofTransition=correctValueMETBasedOnSlopeAndSpeed(valueMETofTransition,slope,speed);
-         //TODO IMPROVE HERE
+         //double valueMETofTransition= database.valueDao().getValueMETById(activityEnter.getDetectedActivityId()).getValueMET();
+         //double correctedValueMETofTransition=correctValueMETBasedOnSlopeAndSpeed(valueMETofTransition,slope,speed);
+
+        double VO2max=3.5 + speed*0.17+slope*speed*0.79;
+
+        if(activityEnter.getDetectedActivityId()==1 ){
+         VO2max=3.5 + speed*0.2+slope*speed*0.9;}
+        if(activityEnter.getDetectedActivityId()==3){
+          VO2max=3.5 ;}
+
+
+
+         double MET=VO2max/3.5;
+
          if(getmRMR()==0.0){countRMRUsingMifflinJeorEquation(1,60,165,21);}
          double RMRinMinute= getmRMR()/1440;
 
 
 
-         double caloriesForTransition=durationOfTransitionInMinutes * valueMETofTransition * RMRinMinute * elevationDifference;
+         double caloriesForTransition=durationOfTransitionInMinutes * MET * RMRinMinute ;
 
         return caloriesForTransition;
     }
@@ -331,7 +359,7 @@ public class MainActivity extends AppCompatActivity {
         if( slope> 0.1 && slope<0.2){
             correctValueMET=8.5;
         }
-//TODO ADD ANOTHER SLOPE VALUES AND CORRECTION
+
         return correctValueMET;
     }
 
@@ -398,7 +426,7 @@ public class MainActivity extends AppCompatActivity {
         double longitude = mLastLocation.getLongitude();
         double latitude = mLastLocation.getLatitude();
         //double[] result={latitude,longitude};
-        //TODO: IMPROVE GETTING LOCATION*/
+        */
 
         locationClient.getLastLocation().addOnSuccessListener(MainActivity.this, new OnSuccessListener<Location>() {
             @Override
@@ -503,6 +531,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         setUpTransitions();
+        startLocationUpdates();
     }
 
 
@@ -563,11 +592,13 @@ public class MainActivity extends AppCompatActivity {
                         .requestActivityTransitionUpdates(request, mPendingIntent);
         task.addOnSuccessListener(
                 new OnSuccessListener<Void>() {
+
                     @Override
                     public void onSuccess(Void result) {
                         //Log.i(TAG, "Transitions Api was successfully registered.");
-                        /*TextView textView3 = findViewById(R.id.action);
-                        textView3.setText("Transitions Api was successfully registered.");*/
+
+                   //TextView textView3 = findViewById(R.id.action);
+                        //textView3.setText("Transitions Api was successfully registered.");
                     }
                 });
         task.addOnFailureListener(
@@ -575,8 +606,8 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onFailure(Exception e) {
                         //Log.e(TAG, "Transitions Api could not be registered: " + e);
-                       /* TextView textView3 = findViewById(R.id.action);
-                        textView3.setText("Transitions Api could not be registered: .");*/
+                        TextView textView3 = findViewById(R.id.action);
+                        textView3.setText("Transitions Api could not be registered: .");
                     }
                 });
     }
@@ -627,26 +658,46 @@ public class MainActivity extends AppCompatActivity {
                 ActivityTransitionResult result = ActivityTransitionResult.extractResult(intent);
                 for (ActivityTransitionEvent event : result.getTransitionEvents()) {
 
-                    int activityType=event.getActivityType();
-                    int transitionType=event.getTransitionType();
+                    int activityType = event.getActivityType();
+                    int transitionType = event.getTransitionType();
                     String theActivity = toActivityString(activityType);
                     String transType = toTransitionType(transitionType);
 
-                    getCurrentLocation();
-                    double latitude = mLastLocation.getLatitude();
-                    double longitude = mLastLocation.getLongitude();
-                    double elevation;
+                    List<DetectedActivities> activitiesBetween = new ArrayList<>();
 
-                     if (getElevation(latitude,longitude)!=0){
-                      elevation=getElevation(latitude,longitude);}
-                     elevation=mElevation;
+                    /*if (transitionType == 1) {
+                        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
+                        double latitudeTemp, longitudeTemp, elevationTemp;
+                        Date timeTempDate;
+                        for (int i = 0; i < locationUpdatesForTransition.size() - 4; i = i + 4) {
+                            latitudeTemp = Double.parseDouble(locationUpdatesForTransition.get(i));
+                            longitudeTemp = Double.parseDouble(locationUpdatesForTransition.get(i + 1));
+                            elevationTemp = Double.parseDouble(locationUpdatesForTransition.get(i + 2));
+                            String timeTemp = locationUpdatesForTransition.get(i + 3);
+                            try {
+                                timeTempDate = formatter.parse(timeTemp);
+                            } catch (java.text.ParseException e) {
+                                timeTempDate = new Date();
+                            }
+                            activitiesBetween.add(new DetectedActivities(theActivity, activityType, transitionType,
+                                    latitudeTemp, longitudeTemp, elevationTemp, timeTempDate));
+                        }
+                        locationUpdatesForTransition.clear();
+                        database.activityDao().insertAllActivities(activitiesBetween);
+                    } else {*/
+                        getCurrentLocation();
+                        double latitude = mLastLocation.getLatitude();
+                        double longitude = mLastLocation.getLongitude();
+                        double elevation;
 
-
-
-                    DetectedActivities lastActivity =
-                            new DetectedActivities(theActivity,activityType,transitionType,latitude,longitude,elevation,new Date());
-                    database.activityDao().insertActivity(lastActivity);
-
+                        if (getElevation(latitude, longitude) != 0) {
+                            elevation = getElevation(latitude, longitude);
+                        }
+                        elevation = mElevation;
+                        DetectedActivities lastActivity =
+                                new DetectedActivities(theActivity, activityType, transitionType, latitude, longitude, elevation, new Date());
+                        database.activityDao().insertActivity(lastActivity);
+                //TODO : Add new database where store duration and calories for transition using all location updates
                     /*new Thread(new Runnable() {
                         @Override
                         public void run() {
@@ -656,14 +707,18 @@ public class MainActivity extends AppCompatActivity {
                             database.activityDao().insertActivity(lastActivity);
                         }
                     }).start();*/
+                    String msg1 = "New activity: " +
+                            theActivity + "   " +
+                            transitionType+ " "+new SimpleDateFormat("HH:mm:ss", Locale.UK)
+                            .format(new Date());
+                    Toast.makeText(getApplicationContext(), msg1, Toast.LENGTH_LONG).show();
 
-
-
-                    TextView textView3 = findViewById(R.id.action);
-                    textView3.setText("Transition: "
-                                    + theActivity + " (" + transType + ")" + "   "
-                                    + new SimpleDateFormat("HH:mm:ss", Locale.UK)
-                                    .format(new Date()));//new java.sql.Timestamp(Calendar.getInstance().getTime().getTime());
+                        /*TextView textView3 = findViewById(R.id.action);
+                        textView3.setText("Transition: "
+                                + theActivity + " (" + transType + ")" + "   "
+                                + new SimpleDateFormat("HH:mm:ss", Locale.UK)
+                                .format(new Date()));//new java.sql.Timestamp(Calendar.getInstance().getTime().getTime());*/
+                   // }
                 }
             }
         }

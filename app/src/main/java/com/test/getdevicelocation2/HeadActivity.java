@@ -65,14 +65,14 @@ public class HeadActivity extends MainActivity {
 
 
                 getCurrentLocation();
-                countRMRUsingMifflinJeorEquation(1,60,165,21);
+                //countRMRUsingMifflinJeorEquation(1,60,165,21);
                 //if(mLastLocation!=null) {
 
                 double Lon = getmLastLocation().getLongitude();
                 double Lat = getmLastLocation().getLatitude();
 
                 String time = getCurrentTime();
-                locationText.setText("Latitude: " + String.valueOf(Lat) + "   Longitude: " + String.valueOf(Lon) + "   Time:" + time);
+                //locationText.setText("Latitude: " + String.valueOf(Lat) + "   Longitude: " + String.valueOf(Lon) + "   Time:" + time);
 
                 double elevation;
 
@@ -87,52 +87,65 @@ public class HeadActivity extends MainActivity {
                 //else textView1.setText("Location is unknown");
 
 
-                List<ValuesMET> valuesMET=getDatabase().valueDao().getAllValues();
-                List<DetectedActivities> activities=getDatabase().activityDao().getAll();
+                //List<ValuesMET> valuesMET=getDatabase().valueDao().getAllValues();
+                //List<DetectedActivities> activities=getDatabase().activityDao().getAll();
 
                 //Date activityTime=new Date(119,4,24,9,46,6);
                 //Date fromTime=new Date(119,4,18,13,46,6);
 
-                Date fromTime=new Date();
-                int hours=Integer.parseInt(timeEdit.getText().toString());
-                fromTime.setHours(fromTime.getHours()-hours);
 
-                Date timeMinus1Hour=new Date();
-                timeMinus1Hour.setHours(timeMinus1Hour.getHours()-1);
+
+                //Date timeMinus1Hour=new Date();
+                //timeMinus1Hour.setHours(timeMinus1Hour.getHours()-1);
 
                 // https://docs.oracle.com/javase/7/docs/api/java/util/Date.html
-                DetectedActivities testActivity1=
+                /*DetectedActivities testActivity1=
                         new DetectedActivities
                                 (new String("WALKING"),7,0,
                                         Lat+30,Lon-30,elevation-100,timeMinus1Hour);
                 DetectedActivities testActivity2=
                         new DetectedActivities
-                                (new String("WALKING"),7,1,Lat,Lon,elevation,new Date());
+                                (new String("WALKING"),7,1,Lat,Lon,elevation,new Date());*/
                 AppDatabase database=getDatabase();
-                database.activityDao().insertActivity(testActivity1);
-                database.activityDao().insertActivity(testActivity2);
+                //database.activityDao().insertActivity(testActivity1);
+                //database.activityDao().insertActivity(testActivity2);
 
-               DetectedActivities lastActivity=database.activityDao().getLastActivity();
+               //DetectedActivities lastActivity=database.activityDao().getLastActivity();
 
 
                List<DetectedActivities> twoLastActivities=database.activityDao().getTwoLastActivities();
+
+               DetectedActivities previousActivity=twoLastActivities.get(1);
+                DetectedActivities currentActivity=twoLastActivities.get(0);
+
                 long durationBetweenTwoLastActivitiesInMinutes= TimeUnit.MILLISECONDS.toMinutes
                         (twoLastActivities.get(0).getTime().getTime()-twoLastActivities.get(1).getTime().getTime());
 
                 actionText.setText("Recent activity : " +String.valueOf(durationBetweenTwoLastActivitiesInMinutes)+ " min "
-                        + lastActivity.getDetectedActivity());
+                        + twoLastActivities.get(0).getDetectedActivity());
 
-                List<DetectedActivities> resultActivities=database.activityDao().getAll();
-                List<DetectedActivities> last24HoursActivity=
-                        database.activityDao().getActivitiesBetweenDates(fromTime,new Date());
+                double calorieConsumptionForLastActivity=getCaloriesForTransitionActivity
+                        (twoLastActivities.get(1),twoLastActivities.get(0));
+                locationText.setText("Calories consumption for last activity  :"+String.valueOf(calorieConsumptionForLastActivity));
+
+                //List<DetectedActivities> resultActivities=database.activityDao().getAll();
+
+               // List<DetectedActivities> last24HoursActivity=
+                       // database.activityDao().getActivitiesBetweenDates(fromTime,new Date());
+
+                Date fromTime=new Date();
+                int hours=Integer.parseInt(timeEdit.getText().toString());
+                fromTime.setHours(fromTime.getHours()-hours);
 
                 double resultCaloriesConsumption=getCaloriesConsumptionBetweenDates(fromTime,new Date());
 
-                caloriesConsumptionText.setText("Calries consumprion for your interval :"+
+                caloriesConsumptionText.setText("Calories consumprion for your interval :"+
                         String.valueOf(resultCaloriesConsumption));
 
 
             }
         });
 }
+
+
 }
