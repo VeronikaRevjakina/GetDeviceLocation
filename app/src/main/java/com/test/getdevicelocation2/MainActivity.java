@@ -1,8 +1,6 @@
 package com.test.getdevicelocation2;
 
-import android.Manifest;
 import android.app.PendingIntent;
-import android.arch.persistence.room.Room;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -10,27 +8,22 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
-import android.location.LocationManager;
 import android.os.AsyncTask;
 
 import android.os.Looper;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
-import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
 
-import com.google.ads.mediation.MediationServerParameters;
 import com.google.android.gms.location.ActivityRecognition;
-import com.google.android.gms.location.ActivityRecognitionClient;
 import com.google.android.gms.location.ActivityTransition;
 import com.google.android.gms.location.ActivityTransitionEvent;
 import com.google.android.gms.location.ActivityTransitionRequest;
@@ -47,13 +40,15 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.Type;
 import java.net.URL;
 import java.security.InvalidParameterException;
-import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -71,8 +66,8 @@ import static com.google.android.gms.location.LocationServices.getFusedLocationP
 public class MainActivity extends AppCompatActivity {
 
 
-    private long UPDATE_INTERVAL = 100 * 1000;  /* 10 secs */
-    private long FASTEST_INTERVAL = 2000; /* 2 sec */
+    private long UPDATE_INTERVAL = 40 * 1000;  /* 40 secs */
+    private long FASTEST_INTERVAL = 20*1000; /* 20 sec */
 
 
     private FusedLocationProviderClient locationClient;
@@ -80,10 +75,10 @@ public class MainActivity extends AppCompatActivity {
     private Location mLastLocation;
     private double mElevation;
     private double mRMR;
-    private List<String> locationUpdatesForTransition;
+    private ArrayList<String> locationUpdatesForTransition;
 
     public SharedPreferences sharedPreferences;
-    public static final String mPreferences="myPreferences";
+    public static final String localUpdatesForTransitionKey="localUpdatesForTransitionKey";
     public static final String mActivityTransitionEventLastActivityIdKey="lastActivityId";
     public static final String mActivityTransitionEventLastActivityTransitionTypeKey="lastActivityTransType";
     public static final String mActivityTransitionEventElapsedTimeKey="lastActivityElapsedTime";
@@ -118,11 +113,21 @@ public class MainActivity extends AppCompatActivity {
         mTransitionsReceiver = new myTransitionReceiver();
         registerReceiver(mTransitionsReceiver, new IntentFilter(TRANSITION_ACTION_RECEIVER));
 
-        mActivityTransitionEvent = new ActivityTransitionEvent(1,0,100000);
+        //mActivityTransitionEvent = new ActivityTransitionEvent(1,0,100000);
 
-         locationUpdatesForTransition=new ArrayList<String>();
+        locationUpdatesForTransition=new ArrayList<String>();
 
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+
+        getCurrentLocation();
+
+        /*SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        String mRMRStr=sharedPreferences.getString(mRMRKey,"1500");
+        mRMR=Double.parseDouble(mRMRStr);
+        double latitude=mLastLocation.getLatitude();
+        double longitude=mLastLocation.getLongitude();
+        mElevation=getElevation(latitude,longitude);*/
+
 
         //database = AppDatabase.getDatabaseInstance(getApplicationContext());
 
@@ -182,7 +187,7 @@ public class MainActivity extends AppCompatActivity {
 
 
                 getCurrentLocation();
-                countRMRUsingMifflinJeorEquation(1, 60, 165, 21);
+
                 //if(mLastLocation!=null) {
                 double Lon = mLastLocation.getLongitude();
                 double Lat = mLastLocation.getLatitude();
@@ -272,23 +277,29 @@ public class MainActivity extends AppCompatActivity {
     }
     public void onLocationChanged(Location location) {
         mLastLocation=location;
-        double latitude=mLastLocation.getLatitude();
-        double longitude=mLastLocation.getLongitude();
+        double latitude=location.getLatitude();
+        double longitude=location.getLongitude();
 
-        double elevation;
+        //contentText=null;
+        double elevation=getElevation(latitude,longitude);
 
-        if (getElevation(latitude,longitude)!=0){
-            elevation=getElevation(latitude,longitude);}
-        elevation=mElevation;
+        if (elevation ==0.0)
+        {elevation=mElevation;}
 
-        Date date = new Date(location.getTime());
+        //Date date = new Date(location.getTime());
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
-        String time = dateFormat.format(date);
+
+        String time = dateFormat.format(getRealTimeinDateTypeFromElapsedTimeNanos(location.getElapsedRealtimeNanos()));
 
         locationUpdatesForTransition.add(String.valueOf(latitude));
         locationUpdatesForTransition.add(String.valueOf(longitude));
         locationUpdatesForTransition.add(String.valueOf(elevation));
         locationUpdatesForTransition.add(time);
+
+
+        //EVERY TIME SAVE WHOLE ARRAY TO SHARED PREFERENCE , DONT KNOW HOW TO FIX
+        saveArrayListToSharedPreferences(locationUpdatesForTransition,localUpdatesForTransitionKey);
+
         // New location has now been determined
         /*String msg = "Updated Location: " +
                 Double.toString(location.getLatitude()) + "," +
@@ -492,7 +503,7 @@ public class MainActivity extends AppCompatActivity {
         String ApiKey="AIzaSyCUsenQyvXXFMHTEcANoDDQhAUoSJo-dNI";
         String url = "https://maps.googleapis.com/maps/api/elevation/json?locations=" + latitude + "," + longitude + "&key="+ApiKey;
         //String url="https://developer.android.com/index.html";
-        if(contentText==null){
+        //if(contentText==null){
             // new ProgressTask().execute(url);
             try {
           contentText = new ProgressTask().execute(url).get();
@@ -512,12 +523,12 @@ public class MainActivity extends AppCompatActivity {
 
 } catch (JSONException e) {
    e.printStackTrace();
+   return 0;
 }
 
+        //}
+        //return 0;
         }
-        return 0;
-
-    }
 
     private void requestPermission(){
        ActivityCompat.requestPermissions(this,new String[] {ACCESS_FINE_LOCATION},1);
@@ -680,12 +691,19 @@ public class MainActivity extends AppCompatActivity {
     public synchronized void setmActivityTransitionEvent(ActivityTransitionEvent mActivityTransitionEvent) {
         this.mActivityTransitionEvent = mActivityTransitionEvent;
     }
-
-    public synchronized void setmActivityTransitionEventWithParams(int activityId,int transType,long elapsedTime) {
+    public synchronized void  clearLocationUpdates(){
+        this.locationUpdatesForTransition.clear();
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        SharedPreferences.Editor editor=sharedPreferences.edit();
+        editor.putString(localUpdatesForTransitionKey,"");
+        editor.commit();
+    }
+    public synchronized ActivityTransitionEvent setmActivityTransitionEventWithParams(int activityId,int transType,long elapsedTime) {
         this.mActivityTransitionEvent = new ActivityTransitionEvent(activityId,transType,elapsedTime);
+        return this.mActivityTransitionEvent;
     }
 
-    public void retrieveValueFromSharedPreferencesToUpdatemActivityTransitionEventForFilteringFalseSignals() {
+    public ActivityTransitionEvent retrieveValueFromSharedPreferencesToUpdatemActivityTransitionEventForFilteringFalseSignals() {
         int lastActivityId, lastActivityTransType;
         long lastActivityElapsedTime;
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
@@ -704,7 +722,7 @@ public class MainActivity extends AppCompatActivity {
             lastActivityElapsedTime = SystemClock.elapsedRealtime() - 1000000;
         }
 
-        setmActivityTransitionEventWithParams(lastActivityId, lastActivityTransType, lastActivityElapsedTime);
+        return setmActivityTransitionEventWithParams(lastActivityId, lastActivityTransType, lastActivityElapsedTime);
 
     }
 
@@ -716,6 +734,32 @@ public class MainActivity extends AppCompatActivity {
         editor.putLong(mActivityTransitionEventElapsedTimeKey,event.getElapsedRealTimeNanos());
         editor.commit();
 
+    }
+
+    /**
+     *     Save and get ArrayList in SharedPreference
+     */
+
+    public void saveArrayListToSharedPreferences(ArrayList<String> list, String key){
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        Gson gson = new Gson();
+        String json = gson.toJson(list);
+        editor.putString(key, json);
+        editor.apply();     // This line is IMPORTANT !!!
+    }
+
+    public ArrayList<String> getArrayListFromSharedPreferences(String key){
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        Gson gson = new Gson();
+        String json = sharedPreferences.getString(key, null);
+        Type type = new TypeToken<ArrayList<String>>() {}.getType();
+        ArrayList<String> result= gson.fromJson(json, type);
+
+        if(result==null){
+            result=new ArrayList<String>();
+        }
+        return result;
     }
 
     public class myTransitionReceiver extends BroadcastReceiver {
@@ -750,55 +794,27 @@ public class MainActivity extends AppCompatActivity {
                     //ВТОРОЙ МЕТОД ФИЛЬТРАЦИИ
 
 
-                    retrieveValueFromSharedPreferencesToUpdatemActivityTransitionEventForFilteringFalseSignals();
+                    mActivityTransitionEvent=
+                            retrieveValueFromSharedPreferencesToUpdatemActivityTransitionEventForFilteringFalseSignals();
 
 
                         if (event.getActivityType() != getmActivityTransitionEvent().getActivityType()
                                 || event.getTransitionType() != getmActivityTransitionEvent().getTransitionType()) {
                             //if (((SystemClock.elapsedRealtime() - (event.getElapsedRealTimeNanos() / 1000000)) / 1000) <= 5) {
 
+                        //ЕСЛИ ТИП=1 ТОГДА ОБРАБОТКА ЛОКАЦИЙ ИЗ МАССИВА
+                            /*if (event.getTransitionType() == 1) {
+                                tempPointsProcessingActivity(event);
+                            }*/
 
-                       // ОБРАБОТКА ЕСЛИ ИСПОЛЬЗОВАТЬ shared
+                            // ОБРАБОТКА ЕСЛИ ИСПОЛЬЗОВАТЬ shared
 
                             putNewValueActivityTransitionEventToSharedPreferences(event);
 
                             //setmActivityTransitionEvent(event);
 
-                    /*if (transitionType == 1) {
-                        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
-                        double latitudeTemp, longitudeTemp, elevationTemp;
-                        Date timeTempDate;
-                        for (int i = 0; i < locationUpdatesForTransition.size() - 4; i = i + 4) {
-                            latitudeTemp = Double.parseDouble(locationUpdatesForTransition.get(i));
-                            longitudeTemp = Double.parseDouble(locationUpdatesForTransition.get(i + 1));
-                            elevationTemp = Double.parseDouble(locationUpdatesForTransition.get(i + 2));
-                            String timeTemp = locationUpdatesForTransition.get(i + 3);
-                            try {
-                                timeTempDate = formatter.parse(timeTemp);
-                            } catch (java.text.ParseException e) {
-                                timeTempDate = new Date();
-                            }
-                            activitiesBetween.add(new DetectedActivities(theActivity, activityType, transitionType,
-                                    latitudeTemp, longitudeTemp, elevationTemp, timeTempDate));
-                        }
-                        locationUpdatesForTransition.clear();
-                        database.activityDao().insertAllActivities(activitiesBetween);
-                    } else {*/
-
                             activityProcessing(event);
-                            /*getCurrentLocation();
-                            double latitude = mLastLocation.getLatitude();
-                            double longitude = mLastLocation.getLongitude();
-                            double elevation;
 
-                            if (getElevation(latitude, longitude) != 0) {
-                                elevation = getElevation(latitude, longitude);
-                            }
-                            elevation = mElevation;
-                            DetectedActivities lastActivity =
-                                    new DetectedActivities(theActivity, activityType, transitionType,
-                                            latitude, longitude, elevation, new Date());
-                            database.activityDao().insertActivity(lastActivity);*/
                             //TODO : Add new database where store duration and calories for transition using all location updates
 
 
@@ -814,7 +830,7 @@ public class MainActivity extends AppCompatActivity {
                             String msg1 = "New activity: " +
                                     theActivity + "   " +
                                     transitionType + " " + new SimpleDateFormat("HH:mm:ss", Locale.UK)
-                                    .format(getRealTime(event.getElapsedRealTimeNanos()));
+                                    .format(getRealTimeinDateTypeFromElapsedTimeNanos(event.getElapsedRealTimeNanos()));
                             Toast.makeText(getApplicationContext(), msg1, Toast.LENGTH_LONG).show();
 
                         /*TextView textView3 = findViewById(R.id.action);
@@ -838,16 +854,15 @@ public class MainActivity extends AppCompatActivity {
             getCurrentLocation();
             double latitude = mLastLocation.getLatitude();
             double longitude = mLastLocation.getLongitude();
-            double elevation;
+            double elevation=getElevation(latitude, longitude);
 
-            if (getElevation(latitude, longitude) != 0) {
-                elevation = getElevation(latitude, longitude);
+            if (elevation == 0) {
+                elevation = mElevation;
             }
             //IMPROVE HERE IF STOPS, remove else
             //else{elevation = mElevation;}
-            elevation = mElevation;
 
-            Date timeReal= getRealTime(event.getElapsedRealTimeNanos());
+            Date timeReal= getRealTimeinDateTypeFromElapsedTimeNanos(event.getElapsedRealTimeNanos());
 
             DetectedActivities lastActivity =
                     new DetectedActivities(theActivity, activityType, transitionType, latitude, longitude, elevation,
@@ -855,10 +870,48 @@ public class MainActivity extends AppCompatActivity {
 
             database.activityDao().insertActivity(lastActivity);
         }
+        public void tempPointsProcessingActivity(ActivityTransitionEvent event) {
+            List<DetectedActivities> activitiesBetween = new ArrayList<>();
+            double latitudeTemp, longitudeTemp, elevationTemp;
+            Date timeTempDate;
+            int activityType = event.getActivityType();
+            String theActivity = toActivityString(activityType);
+
+            locationUpdatesForTransition=getArrayListFromSharedPreferences(localUpdatesForTransitionKey);
+
+            for (int i = 0; i < locationUpdatesForTransition.size() - 4; i = i + 4) {
+                //time less when detected enter activity
+                if (Long.parseLong(locationUpdatesForTransition.get(i + 3))
+                        >= mActivityTransitionEvent.getElapsedRealTimeNanos()) {
+
+                    //time more than detected exit activity
+                    if (Long.parseLong(locationUpdatesForTransition.get(i + 3))
+                            > event.getElapsedRealTimeNanos()) {
+                        break;
+                    }
+
+                    latitudeTemp = Double.parseDouble(locationUpdatesForTransition.get(i));
+                    longitudeTemp = Double.parseDouble(locationUpdatesForTransition.get(i + 1));
+                    elevationTemp = Double.parseDouble(locationUpdatesForTransition.get(i + 2));
+                    String timeTemp = locationUpdatesForTransition.get(i + 3);
+
+                    timeTempDate = getRealTimeinDateTypeFromElapsedTimeNanos(Long.parseLong(timeTemp));
+                    //For temporary values
+                    int transitionType = 2;
+
+                    activitiesBetween.add(new DetectedActivities(theActivity, activityType, transitionType,
+                            latitudeTemp, longitudeTemp, elevationTemp, timeTempDate));
+                }
+
+                //locationUpdatesForTransition.clear();
+                clearLocationUpdates();
+                database.activityDao().insertAllActivities(activitiesBetween);
+            }
+        }
     }
 
 
-    public Date getRealTime(long timeNanos) {
+    public Date getRealTimeinDateTypeFromElapsedTimeNanos(long timeNanos) {
         Date timeReal=new Date();
         timeReal.setTime(System.currentTimeMillis()-
                 TimeUnit.NANOSECONDS.toMillis(SystemClock.elapsedRealtimeNanos()-timeNanos));
@@ -896,6 +949,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         unregisterReceiver(mTransitionsReceiver);
+        clearLocationUpdates();
         AppDatabase.destroyInstance();
     }
 
