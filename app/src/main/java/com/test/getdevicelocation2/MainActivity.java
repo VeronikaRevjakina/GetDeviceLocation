@@ -76,6 +76,8 @@ public class MainActivity extends AppCompatActivity {
     private double mElevation;
     private double mRMR;
     private ArrayList<String> locationUpdatesForTransition;
+    private Boolean mRequestingLocationUpdates;
+    private LocationCallback mLocationCallback;
 
     public SharedPreferences sharedPreferences;
     public static final String localUpdatesForTransitionKey="localUpdatesForTransitionKey";
@@ -139,8 +141,10 @@ public class MainActivity extends AppCompatActivity {
         }).start();
 
 
-
+        createLocationCallback();
         startLocationUpdates();
+        mRequestingLocationUpdates=true;
+
 
         //mTransitionsReceiver.onReceive(MainActivity.this,intent);
 
@@ -267,13 +271,22 @@ public class MainActivity extends AppCompatActivity {
 
         }
         locationClient.requestLocationUpdates(mLocationRequest, new LocationCallback() {
-                    @Override
-                    public void onLocationResult(LocationResult locationResult) {
-                        // do work here
-                        onLocationChanged(locationResult.getLastLocation());
-                    }
-                },
-                Looper.myLooper());
+            @Override
+            public void onLocationResult(LocationResult locationResult) {
+                // do work here
+                onLocationChanged(locationResult.getLastLocation());
+            }
+        }, Looper.myLooper());
+    }
+
+    private void createLocationCallback() {
+        mLocationCallback = new LocationCallback() {
+            @Override
+            public void onLocationResult(LocationResult locationResult) {
+                // do work here
+                onLocationChanged(locationResult.getLastLocation());
+            }
+            };
     }
     public void onLocationChanged(Location location) {
         mLastLocation=location;
@@ -307,6 +320,17 @@ public class MainActivity extends AppCompatActivity {
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();*/
         // You can now create a LatLng Object for use with maps
         LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+    }
+
+    private void stopLocationUpdates() {
+        if (!mRequestingLocationUpdates) {
+            //Log.d(TAG, "stopLocationUpdates: updates never requested, no-op.");
+            return;
+        }
+
+        locationClient.removeLocationUpdates(mLocationCallback);
+
+
     }
 
 
@@ -802,8 +826,22 @@ public class MainActivity extends AppCompatActivity {
                                 || event.getTransitionType() != getmActivityTransitionEvent().getTransitionType()) {
                             //if (((SystemClock.elapsedRealtime() - (event.getElapsedRealTimeNanos() / 1000000)) / 1000) <= 5) {
 
+
+                           /* if (event.getTransitionType() == 0){
+                                if(!mRequestingLocationUpdates){
+                                    startLocationUpdates();
+                                   mRequestingLocationUpdates=true;
+                                }
+                            }*/
                         //ЕСЛИ ТИП=1 ТОГДА ОБРАБОТКА ЛОКАЦИЙ ИЗ МАССИВА
+
                             /*if (event.getTransitionType() == 1) {
+
+                                if(mRequestingLocationUpdates){
+                                    stopLocationUpdates();
+                                    mRequestingLocationUpdates=false;
+                                }
+
                                 tempPointsProcessingActivity(event);
                             }*/
 
