@@ -16,6 +16,7 @@ import android.os.AsyncTask;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -684,6 +685,39 @@ public class MainActivity extends AppCompatActivity {
         this.mActivityTransitionEvent = new ActivityTransitionEvent(activityId,transType,elapsedTime);
     }
 
+    public void retrieveValueFromSharedPreferencesToUpdatemActivityTransitionEventForFilteringFalseSignals() {
+        int lastActivityId, lastActivityTransType;
+        long lastActivityElapsedTime;
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        if (sharedPreferences.contains(mActivityTransitionEventLastActivityIdKey) &&
+                sharedPreferences.contains(mActivityTransitionEventLastActivityTransitionTypeKey) &&
+                sharedPreferences.contains(mActivityTransitionEventElapsedTimeKey)) {
+
+            lastActivityId = sharedPreferences.getInt(mActivityTransitionEventLastActivityIdKey, 1);
+            lastActivityTransType = sharedPreferences.getInt
+                    (mActivityTransitionEventLastActivityTransitionTypeKey, 0);
+            lastActivityElapsedTime = sharedPreferences.getLong(mActivityTransitionEventElapsedTimeKey,
+                    SystemClock.elapsedRealtime() - 1000000);
+        } else {
+            lastActivityId = 1;
+            lastActivityTransType = 0;
+            lastActivityElapsedTime = SystemClock.elapsedRealtime() - 1000000;
+        }
+
+        setmActivityTransitionEventWithParams(lastActivityId, lastActivityTransType, lastActivityElapsedTime);
+
+    }
+
+    public void putNewValueActivityTransitionEventToSharedPreferences(ActivityTransitionEvent event){
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        SharedPreferences.Editor editor=sharedPreferences.edit();
+        editor.putInt(mActivityTransitionEventLastActivityIdKey,event.getActivityType());
+        editor.putInt(mActivityTransitionEventLastActivityTransitionTypeKey,event.getTransitionType());
+        editor.putLong(mActivityTransitionEventElapsedTimeKey,event.getElapsedRealTimeNanos());
+        editor.commit();
+
+    }
+
     public class myTransitionReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -708,33 +742,16 @@ public class MainActivity extends AppCompatActivity {
 
                     List<DetectedActivities> activitiesBetween = new ArrayList<>();
 
-                     //МОЖНО ТАК ОТСЕКАТЬ:
+                    //МОЖНО ТАК ОТСЕКАТЬ:
                       /*DetectedActivities lastActivity=database.activityDao().getLastActivity();
                     if (event.getActivityType() != lastActivity.getDetectedActivityId()
                             || event.getTransitionType() != lastActivity.getTransitionType()) {*/
 
-                        //ВТОРОЙ МЕТОД ФИЛЬТРАЦИИ
+                    //ВТОРОЙ МЕТОД ФИЛЬТРАЦИИ
 
 
-                    /* int lastActivityId,lastActivityTransType;
-                     long lastActivityElapsedTime;
-                     SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-                    if(sharedPreferences.contains(mActivityTransitionEventLastActivityIdKey) &&
-                            sharedPreferences.contains(mActivityTransitionEventLastActivityTransitionTypeKey) &&
-                            sharedPreferences.contains(mActivityTransitionEventElapsedTimeKey)) {
+                    retrieveValueFromSharedPreferencesToUpdatemActivityTransitionEventForFilteringFalseSignals();
 
-                        lastActivityId = sharedPreferences.getInt(mActivityTransitionEventLastActivityIdKey, 1);
-                        lastActivityTransType = sharedPreferences.getInt
-                                (mActivityTransitionEventLastActivityTransitionTypeKey, 0);
-                        lastActivityElapsedTime = sharedPreferences.getLong(mActivityTransitionEventElapsedTimeKey,
-                                SystemClock.elapsedRealtime() - 1000000);
-                    }
-                    else {
-                        lastActivityId=1;
-                        lastActivityTransType=0;
-                        lastActivityElapsedTime=SystemClock.elapsedRealtime() - 1000000;}
-
-                        setmActivityTransitionEventWithParams(lastActivityId,lastActivityTransType,lastActivityElapsedTime); */
 
                         if (event.getActivityType() != getmActivityTransitionEvent().getActivityType()
                                 || event.getTransitionType() != getmActivityTransitionEvent().getTransitionType()) {
@@ -743,14 +760,10 @@ public class MainActivity extends AppCompatActivity {
 
                        // ОБРАБОТКА ЕСЛИ ИСПОЛЬЗОВАТЬ shared
 
-                       /* SharedPreferences.Editor editor=sharedPreferences.edit();
-                        editor.putInt(mActivityTransitionEventLastActivityIdKey,event.getActivityType());
-                        editor.putInt(mActivityTransitionEventLastActivityTransitionTypeKey,event.getTransitionType());
-                        editor.putLong(mActivityTransitionEventElapsedTimeKey,event.getElapsedRealTimeNanos());
-                        editor.commit();*/
+                            putNewValueActivityTransitionEventToSharedPreferences(event);
 
+                            //setmActivityTransitionEvent(event);
 
-                            setmActivityTransitionEvent(event);
                     /*if (transitionType == 1) {
                         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
                         double latitudeTemp, longitudeTemp, elevationTemp;
@@ -843,6 +856,7 @@ public class MainActivity extends AppCompatActivity {
             database.activityDao().insertActivity(lastActivity);
         }
     }
+
 
     public Date getRealTime(long timeNanos) {
         Date timeReal=new Date();
