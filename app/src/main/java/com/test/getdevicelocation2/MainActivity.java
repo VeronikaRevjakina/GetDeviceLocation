@@ -7,12 +7,15 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.AsyncTask;
 
 import android.os.Looper;
+import android.os.SystemClock;
+import android.preference.PreferenceManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -78,11 +81,18 @@ public class MainActivity extends AppCompatActivity {
     private double mRMR;
     private List<String> locationUpdatesForTransition;
 
+    public SharedPreferences sharedPreferences;
+    public static final String mPreferences="myPreferences";
+    public static final String mActivityTransitionEventLastActivityIdKey="lastActivityId";
+    public static final String mActivityTransitionEventLastActivityTransitionTypeKey="lastActivityTransType";
+    public static final String mActivityTransitionEventElapsedTimeKey="lastActivityElapsedTime";
+    public static final String mRMRKey="mRMRkey";
 
     String contentText = null;
 
     private PendingIntent mPendingIntent;
     private myTransitionReceiver mTransitionsReceiver;
+    private  ActivityTransitionEvent mActivityTransitionEvent;
 
     private Button maleButton;
     private Button femaleButton;
@@ -107,7 +117,11 @@ public class MainActivity extends AppCompatActivity {
         mTransitionsReceiver = new myTransitionReceiver();
         registerReceiver(mTransitionsReceiver, new IntentFilter(TRANSITION_ACTION_RECEIVER));
 
+        mActivityTransitionEvent = new ActivityTransitionEvent(1,0,100000);
+
          locationUpdatesForTransition=new ArrayList<String>();
+
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 
         //database = AppDatabase.getDatabaseInstance(getApplicationContext());
 
@@ -117,7 +131,6 @@ public class MainActivity extends AppCompatActivity {
                 database = AppDatabase.getDatabaseInstance(getApplicationContext());
             }
         }).start();
-
 
 
 
@@ -173,8 +186,16 @@ public class MainActivity extends AppCompatActivity {
                 double Lon = mLastLocation.getLongitude();
                 double Lat = mLastLocation.getLatitude();
 
+                SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+                String mRMRStr=sharedPreferences.getString(mRMRKey,"1500");
+                mRMR=Double.parseDouble(mRMRStr);
+                textView4.setText("RMR"+ String.valueOf(mRMR));
+
                 String time = getCurrentTime();
-                textView1.setText("Latitude: " + String.valueOf(Lat) + "   Longitude: " + String.valueOf(Lon) + "   Time:" + time);
+                textView1.setText("Latitude: " + String.valueOf(Lat) + "   Longitude: " + String.valueOf(Lon) + "   Time:" + time
+                +"RMR"+ String.valueOf(mRMR));
+
+
 
                 double elevation;
 
@@ -268,10 +289,10 @@ public class MainActivity extends AppCompatActivity {
         locationUpdatesForTransition.add(String.valueOf(elevation));
         locationUpdatesForTransition.add(time);
         // New location has now been determined
-        String msg = "Updated Location: " +
+        /*String msg = "Updated Location: " +
                 Double.toString(location.getLatitude()) + "," +
                 Double.toString(location.getLongitude() )+ " "+ time;
-        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();*/
         // You can now create a LatLng Object for use with maps
         LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
     }
@@ -341,8 +362,18 @@ public class MainActivity extends AppCompatActivity {
 
          double MET=VO2max/3.5;
 
-         if(getmRMR()==0.0){countRMRUsingMifflinJeorEquation(1,60,165,21);}
-         double RMRinMinute= getmRMR()/1440;
+       // sharedPreferences=getSharedPreferences(mPreferences,getApplicationContext().MODE_PRIVATE);
+
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        String mRMRStr=sharedPreferences.getString(mRMRKey,"1500");
+        mRMR=Double.parseDouble(mRMRStr);
+
+        if(mRMR==0.0){
+             String msg = "Insert your personal data for counting RMR!";
+             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+            countRMRUsingMifflinJeorEquation(1,60,165,21);}
+
+         double RMRinMinute= mRMR/1440;
 
 
 
@@ -641,6 +672,18 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public synchronized ActivityTransitionEvent getmActivityTransitionEvent() {
+        return mActivityTransitionEvent;
+    }
+
+    public synchronized void setmActivityTransitionEvent(ActivityTransitionEvent mActivityTransitionEvent) {
+        this.mActivityTransitionEvent = mActivityTransitionEvent;
+    }
+
+    public synchronized void setmActivityTransitionEventWithParams(int activityId,int transType,long elapsedTime) {
+        this.mActivityTransitionEvent = new ActivityTransitionEvent(activityId,transType,elapsedTime);
+    }
+
     public class myTransitionReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -665,6 +708,49 @@ public class MainActivity extends AppCompatActivity {
 
                     List<DetectedActivities> activitiesBetween = new ArrayList<>();
 
+                     //МОЖНО ТАК ОТСЕКАТЬ:
+                      /*DetectedActivities lastActivity=database.activityDao().getLastActivity();
+                    if (event.getActivityType() != lastActivity.getDetectedActivityId()
+                            || event.getTransitionType() != lastActivity.getTransitionType()) {*/
+
+                        //ВТОРОЙ МЕТОД ФИЛЬТРАЦИИ
+
+
+                    /* int lastActivityId,lastActivityTransType;
+                     long lastActivityElapsedTime;
+                     SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+                    if(sharedPreferences.contains(mActivityTransitionEventLastActivityIdKey) &&
+                            sharedPreferences.contains(mActivityTransitionEventLastActivityTransitionTypeKey) &&
+                            sharedPreferences.contains(mActivityTransitionEventElapsedTimeKey)) {
+
+                        lastActivityId = sharedPreferences.getInt(mActivityTransitionEventLastActivityIdKey, 1);
+                        lastActivityTransType = sharedPreferences.getInt
+                                (mActivityTransitionEventLastActivityTransitionTypeKey, 0);
+                        lastActivityElapsedTime = sharedPreferences.getLong(mActivityTransitionEventElapsedTimeKey,
+                                SystemClock.elapsedRealtime() - 1000000);
+                    }
+                    else {
+                        lastActivityId=1;
+                        lastActivityTransType=0;
+                        lastActivityElapsedTime=SystemClock.elapsedRealtime() - 1000000;}
+
+                        setmActivityTransitionEventWithParams(lastActivityId,lastActivityTransType,lastActivityElapsedTime); */
+
+                        if (event.getActivityType() != getmActivityTransitionEvent().getActivityType()
+                                || event.getTransitionType() != getmActivityTransitionEvent().getTransitionType()) {
+                            //if (((SystemClock.elapsedRealtime() - (event.getElapsedRealTimeNanos() / 1000000)) / 1000) <= 5) {
+
+
+                       // ОБРАБОТКА ЕСЛИ ИСПОЛЬЗОВАТЬ shared
+
+                       /* SharedPreferences.Editor editor=sharedPreferences.edit();
+                        editor.putInt(mActivityTransitionEventLastActivityIdKey,event.getActivityType());
+                        editor.putInt(mActivityTransitionEventLastActivityTransitionTypeKey,event.getTransitionType());
+                        editor.putLong(mActivityTransitionEventElapsedTimeKey,event.getElapsedRealTimeNanos());
+                        editor.commit();*/
+
+
+                            setmActivityTransitionEvent(event);
                     /*if (transitionType == 1) {
                         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
                         double latitudeTemp, longitudeTemp, elevationTemp;
@@ -685,19 +771,24 @@ public class MainActivity extends AppCompatActivity {
                         locationUpdatesForTransition.clear();
                         database.activityDao().insertAllActivities(activitiesBetween);
                     } else {*/
-                        getCurrentLocation();
-                        double latitude = mLastLocation.getLatitude();
-                        double longitude = mLastLocation.getLongitude();
-                        double elevation;
 
-                        if (getElevation(latitude, longitude) != 0) {
-                            elevation = getElevation(latitude, longitude);
-                        }
-                        elevation = mElevation;
-                        DetectedActivities lastActivity =
-                                new DetectedActivities(theActivity, activityType, transitionType, latitude, longitude, elevation, new Date());
-                        database.activityDao().insertActivity(lastActivity);
-                //TODO : Add new database where store duration and calories for transition using all location updates
+                            activityProcessing(event);
+                            /*getCurrentLocation();
+                            double latitude = mLastLocation.getLatitude();
+                            double longitude = mLastLocation.getLongitude();
+                            double elevation;
+
+                            if (getElevation(latitude, longitude) != 0) {
+                                elevation = getElevation(latitude, longitude);
+                            }
+                            elevation = mElevation;
+                            DetectedActivities lastActivity =
+                                    new DetectedActivities(theActivity, activityType, transitionType,
+                                            latitude, longitude, elevation, new Date());
+                            database.activityDao().insertActivity(lastActivity);*/
+                            //TODO : Add new database where store duration and calories for transition using all location updates
+
+
                     /*new Thread(new Runnable() {
                         @Override
                         public void run() {
@@ -707,26 +798,67 @@ public class MainActivity extends AppCompatActivity {
                             database.activityDao().insertActivity(lastActivity);
                         }
                     }).start();*/
-                    String msg1 = "New activity: " +
-                            theActivity + "   " +
-                            transitionType+ " "+new SimpleDateFormat("HH:mm:ss", Locale.UK)
-                            .format(new Date());
-                    Toast.makeText(getApplicationContext(), msg1, Toast.LENGTH_LONG).show();
+                            String msg1 = "New activity: " +
+                                    theActivity + "   " +
+                                    transitionType + " " + new SimpleDateFormat("HH:mm:ss", Locale.UK)
+                                    .format(getRealTime(event.getElapsedRealTimeNanos()));
+                            Toast.makeText(getApplicationContext(), msg1, Toast.LENGTH_LONG).show();
 
                         /*TextView textView3 = findViewById(R.id.action);
                         textView3.setText("Transition: "
                                 + theActivity + " (" + transType + ")" + "   "
                                 + new SimpleDateFormat("HH:mm:ss", Locale.UK)
                                 .format(new Date()));//new java.sql.Timestamp(Calendar.getInstance().getTime().getTime());*/
-                   // }
+                            // }
+                            //}
+                        //}
+                    }
                 }
             }
         }
+        public void activityProcessing(ActivityTransitionEvent event) {
+
+            int activityType =event.getActivityType();
+            int transitionType =event.getTransitionType() ;
+            String theActivity =toActivityString(activityType) ;
+
+            getCurrentLocation();
+            double latitude = mLastLocation.getLatitude();
+            double longitude = mLastLocation.getLongitude();
+            double elevation;
+
+            if (getElevation(latitude, longitude) != 0) {
+                elevation = getElevation(latitude, longitude);
+            }
+            //IMPROVE HERE IF STOPS, remove else
+            //else{elevation = mElevation;}
+            elevation = mElevation;
+
+            Date timeReal= getRealTime(event.getElapsedRealTimeNanos());
+
+            DetectedActivities lastActivity =
+                    new DetectedActivities(theActivity, activityType, transitionType, latitude, longitude, elevation,
+                            timeReal);
+
+            database.activityDao().insertActivity(lastActivity);
+        }
+    }
+
+    public Date getRealTime(long timeNanos) {
+        Date timeReal=new Date();
+        timeReal.setTime(System.currentTimeMillis()-
+                TimeUnit.NANOSECONDS.toMillis(SystemClock.elapsedRealtimeNanos()-timeNanos));
+        return timeReal;
     }
 
     public double getmRMR() {
         return mRMR;
     }
+
+    public SharedPreferences getSharedPreferences() {
+        return sharedPreferences;
+    }
+
     public void setRMR(double rmr){
         mRMR=rmr;
     }

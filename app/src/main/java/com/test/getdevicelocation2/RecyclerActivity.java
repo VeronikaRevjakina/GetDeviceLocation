@@ -41,7 +41,7 @@ public class RecyclerActivity extends MainActivity {
 
         //final List<DetectedActivities> last24HoursActivity=getDatabase().activityDao().getExitActivitiesBetweenDates(fromTime,new Date());
 
-        final List<DetectedActivities> last24HoursActivity=getDatabase().activityDao().getExitActivitiesBetweenDates(fromTime,new Date());
+        final List<DetectedActivities> last24HoursActivity=getDatabase().activityDao().getActivitiesBetweenDates(fromTime,new Date());
 
 
         // specify an adapter

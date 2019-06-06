@@ -1,7 +1,9 @@
 package com.test.getdevicelocation2;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 
+import android.preference.PreferenceManager;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -47,6 +49,11 @@ public class FemaleRMRActivity extends MainActivity {
                 double resultRMR=countRMRUsingMifflinJeorEquation(sex,weight,height,age);
                 resultRMRText.setText(String.valueOf(resultRMR));
                 setRMR(resultRMR);
+                //sharedPreferences=getSharedPreferences(mPreferences,getApplicationContext().MODE_PRIVATE);
+                SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+                SharedPreferences.Editor editor=sharedPreferences.edit();
+                editor.putString("mRMRkey",String.valueOf(resultRMR));
+                editor.commit();
             }
             else{
                 Toast.makeText(FemaleRMRActivity.this, "Incorrect data.", Toast.LENGTH_SHORT).show();
