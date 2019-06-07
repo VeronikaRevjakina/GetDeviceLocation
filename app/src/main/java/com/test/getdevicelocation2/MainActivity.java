@@ -216,6 +216,11 @@ public class MainActivity extends AppCompatActivity {
 
                 textView2.setText("Elevation: " + String.valueOf(elevation));
 
+                //For Checking Database Latest Activities
+                Date timeMinus1Hour=new Date();
+                timeMinus1Hour.setHours(timeMinus1Hour.getHours()-2);
+
+                List<DetectedActivities> activities = database.activityDao().getActivitiesBetweenDates( timeMinus1Hour, new Date());
 
                 //}
                 //else textView1.setText("Location is unknown");
@@ -307,7 +312,7 @@ public class MainActivity extends AppCompatActivity {
         locationUpdatesForTransition.add(String.valueOf(latitude));
         locationUpdatesForTransition.add(String.valueOf(longitude));
         locationUpdatesForTransition.add(String.valueOf(elevation));
-        locationUpdatesForTransition.add(time);
+        locationUpdatesForTransition.add(String.valueOf(location.getElapsedRealtimeNanos()));
 
 
         //EVERY TIME SAVE WHOLE ARRAY TO SHARED PREFERENCE , DONT KNOW HOW TO FIX
@@ -827,7 +832,7 @@ public class MainActivity extends AppCompatActivity {
                             //if (((SystemClock.elapsedRealtime() - (event.getElapsedRealTimeNanos() / 1000000)) / 1000) <= 5) {
 
 
-                           /* if (event.getTransitionType() == 0){
+                            /*if (event.getTransitionType() == 0){
                                 if(!mRequestingLocationUpdates){
                                     startLocationUpdates();
                                    mRequestingLocationUpdates=true;
@@ -835,15 +840,15 @@ public class MainActivity extends AppCompatActivity {
                             }*/
                         //ЕСЛИ ТИП=1 ТОГДА ОБРАБОТКА ЛОКАЦИЙ ИЗ МАССИВА
 
-                            /*if (event.getTransitionType() == 1) {
+                            if (event.getTransitionType() == 1) {
 
-                                if(mRequestingLocationUpdates){
+                                /*if(mRequestingLocationUpdates){
                                     stopLocationUpdates();
                                     mRequestingLocationUpdates=false;
-                                }
+                                }*/
 
                                 tempPointsProcessingActivity(event);
-                            }*/
+                            }
 
                             // ОБРАБОТКА ЕСЛИ ИСПОЛЬЗОВАТЬ shared
 
