@@ -360,8 +360,12 @@ public class MainActivity extends AppCompatActivity {
 
             if(listActivitiesBetweenDates.get(i).getDetectedActivityId()
                     ==listActivitiesBetweenDates.get(i+1).getDetectedActivityId()) {
-                if (listActivitiesBetweenDates.get(i).getTransitionType() == 0
-                        && listActivitiesBetweenDates.get(i+1).getTransitionType() == 1) {
+                int transTypeOld=listActivitiesBetweenDates.get(i).getTransitionType();
+                int transTypeNext=listActivitiesBetweenDates.get(i+1).getTransitionType();
+                if      ((transTypeOld == 0 && transTypeNext == 1) ||
+                        (transTypeOld == 0 && transTypeNext == 2) ||
+                        (transTypeOld == 2 && transTypeNext == 2) ||
+                        (transTypeOld == 2 && transTypeNext == 1)) {
                     caloriesConsumption=caloriesConsumption+
                             getCaloriesForTransitionActivity(listActivitiesBetweenDates.get(i),listActivitiesBetweenDates.get(i+1));
 
