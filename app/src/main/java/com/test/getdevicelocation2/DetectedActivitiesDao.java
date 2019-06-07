@@ -29,6 +29,12 @@ public interface DetectedActivitiesDao {
     @Query("SELECT * FROM activities WHERE Id=:id ")
     DetectedActivities getActivityById(int id);
 
+    @Query("SELECT Id FROM activities WHERE Id<:id AND transition_type=0 ORDER BY Id DESC LIMIT 1")
+    int getActivityPrevById(int id);
+
+    @Query("SELECT * FROM activities WHERE Id >= ( SELECT Id FROM activities WHERE Id<:id AND transition_type=0 ORDER BY Id DESC LIMIT 1) AND Id<=:id ")
+    List<DetectedActivities> getFullTransitionById(int id);
+
 
     @Query("SELECT * FROM activities WHERE Id=:id AND Id=:id-1 ORDER BY Id DESC")
     List<DetectedActivities> getListActivitiesById(int id);

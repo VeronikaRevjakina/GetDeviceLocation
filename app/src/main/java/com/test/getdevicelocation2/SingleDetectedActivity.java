@@ -20,37 +20,59 @@ public class SingleDetectedActivity extends MainActivity {
         singleActionText = findViewById(R.id.singleAction);
         calorieConsumptionSingleActionText = findViewById(R.id.calorieConsumptionSingleAction);
         Intent intent = getIntent();
-        String activityIdStr= intent.getStringExtra("key");
+        String activityIdStr = intent.getStringExtra("key");
         //singleActionText.setText(activityIdStr);
-       int activityId=Integer.parseInt(activityIdStr);
-       DetectedActivities currentActivity=getDatabase().activityDao().getActivityById(activityId);
-       DetectedActivities previousActivity=getDatabase().activityDao().getActivityById(activityId-1);
-       //singleActionText.setText(String.valueOf(previousActivity.getElevation()));
+        int activityId = Integer.parseInt(activityIdStr);
+        //int activity_id_enter = getDatabase().activityDao().getActivityPrevById(activityId);
+        List<DetectedActivities> allActivitiesForTransition = getDatabase().activityDao().getFullTransitionById(activityId);
+
+        /*DetectedActivities currentActivity = getDatabase().activityDao().getActivityById(activityId);
+        DetectedActivities previousActivity = getDatabase().activityDao().getActivityById(activityId - 1);*/
+
+        //singleActionText.setText(String.valueOf(previousActivity.getElevation()));
         //List<DetectedActivities> currentAndLastActivity=getDatabase().activityDao().getListActivitiesById(activityId);
-        double calorieConsumptionSingleAction=getCaloriesForTransitionActivity
-                (previousActivity,currentActivity);
-        calorieConsumptionSingleActionText.setText("Calories consumption for chosen activity : "+
+
+        DetectedActivities previousActivity,currentActivity;
+        double calorieConsumptionSingleAction=0.0;
+        double distanceFull=0.0;
+        long durationBetweenTwoLastActivitiesInMinutes=0;
+        double totalHeightChange=0.0;
+
+        for (int i = 0; i < allActivitiesForTransition.size()-1; i++) {
+
+            previousActivity=allActivitiesForTransition.get(i);
+            currentActivity=allActivitiesForTransition.get(i+1);
+
+             calorieConsumptionSingleAction = calorieConsumptionSingleAction+getCaloriesForTransitionActivity
+                    (previousActivity, currentActivity);
+             // calorieConsumptionSingleActionText.setText(String.valueOf(calorieConsumptionSingleAction));
+
+            distanceFull = distanceFull+getDistance(previousActivity.getLatitude(), previousActivity.getLongitude(),
+                    currentActivity.getLatitude(), currentActivity.getLongitude(),
+                    previousActivity.getElevation(), currentActivity.getElevation());
+
+
+
+             durationBetweenTwoLastActivitiesInMinutes= durationBetweenTwoLastActivitiesInMinutes+TimeUnit.MILLISECONDS.toMinutes
+                    ( currentActivity.getTime().getTime()- previousActivity.getTime().getTime());
+
+            //double speed = getSpeed(distanceFull, durationBetweenTwoLastActivitiesInMinutes);
+            double distanceFlat = getFlatDistance(previousActivity.getLatitude(), previousActivity.getLongitude(),
+                    currentActivity.getLatitude(), currentActivity.getLongitude());
+            double height = currentActivity.getElevation() - previousActivity.getElevation();
+            totalHeightChange=totalHeightChange+height;
+
+            //double slopeInDegrees = getDegreeSlope(distanceFlat, height);
+
+
+
+        }
+
+        calorieConsumptionSingleActionText.setText("Calories consumption for chosen activity : " +
                 String.valueOf(calorieConsumptionSingleAction));
 
-       // calorieConsumptionSingleActionText.setText(String.valueOf(calorieConsumptionSingleAction));
-
-        double distanceFull=getDistance(previousActivity.getLatitude(),previousActivity.getLongitude(),
-                currentActivity.getLatitude(),currentActivity.getLongitude(),
-                previousActivity.getElevation(),currentActivity.getElevation());
-
-        long durationBetweenTwoLastActivitiesInMinutes= TimeUnit.MILLISECONDS.toMinutes
-                ( currentActivity.getTime().getTime()- previousActivity.getTime().getTime());
-
-        double speed=getSpeed(distanceFull,durationBetweenTwoLastActivitiesInMinutes);
-        double distanceFlat=getFlatDistance(previousActivity.getLatitude(),previousActivity.getLongitude(),
-                currentActivity.getLatitude(),currentActivity.getLongitude());
-        double height= currentActivity.getElevation()-previousActivity.getElevation();
-        double slopeInDegrees=getDegreeSlope(distanceFlat,height);
-
-        singleActionText.setText("Duration : "+String.valueOf(durationBetweenTwoLastActivitiesInMinutes)+
-                "  Distance: "+String.valueOf(distanceFull) +"  Speed: "+String.valueOf(speed)+"  Slope in degrees: "+
-                String.valueOf(slopeInDegrees));
-
+        singleActionText.setText("Total duration : " + String.valueOf(durationBetweenTwoLastActivitiesInMinutes) +
+                "  Total distance: " + String.valueOf(distanceFull) + "  Total height change: " + String.valueOf(totalHeightChange));
     }
 
 }
