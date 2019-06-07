@@ -217,10 +217,10 @@ public class MainActivity extends AppCompatActivity {
                 textView2.setText("Elevation: " + String.valueOf(elevation));
 
                 //For Checking Database Latest Activities
-                Date timeMinus1Hour=new Date();
+                /*Date timeMinus1Hour=new Date();
                 timeMinus1Hour.setHours(timeMinus1Hour.getHours()-2);
 
-                List<DetectedActivities> activities = database.activityDao().getActivitiesBetweenDates( timeMinus1Hour, new Date());
+                List<DetectedActivities> activities = database.activityDao().getActivitiesBetweenDates( timeMinus1Hour, new Date());*/
 
                 //}
                 //else textView1.setText("Location is unknown");
