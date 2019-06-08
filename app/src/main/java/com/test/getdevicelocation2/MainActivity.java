@@ -207,12 +207,8 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-                double elevation;
+                double elevation=getElevation(Lat, Lon);
 
-                if (getElevation(Lat, Lon) != 0.0) {
-                    elevation = getElevation(Lat, Lon);
-                }
-                elevation = mElevation;
 
                 textView2.setText("Elevation: " + String.valueOf(elevation));
 
@@ -416,7 +412,7 @@ public class MainActivity extends AppCompatActivity {
         if(mRMR==0.0){
              String msg = "Insert your personal data for counting RMR!";
              Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
-            countRMRUsingMifflinJeorEquation(1,60,165,21);}
+            mRMR=1500;}
 
          double RMRinMinute= mRMR/1440;
 
