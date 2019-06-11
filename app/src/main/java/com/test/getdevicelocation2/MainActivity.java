@@ -282,18 +282,24 @@ public class MainActivity extends AppCompatActivity {
 
         try {
             gps_enabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER);
-            Toast.makeText(this, "Turn on GPS!", Toast.LENGTH_SHORT).show();
+
         } catch (Exception ex) {
         }
 
         try {
             network_enabled = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
-            Toast.makeText(this, "Turn on Wi-Fi!", Toast.LENGTH_SHORT).show();
+
         } catch (Exception ex) {
         }
 
         if (!gps_enabled ) {
-
+            Toast.makeText(this, "Turn on GPS!", Toast.LENGTH_SHORT).show();
+        }
+        if(!network_enabled){
+            Toast.makeText(this, "Turn on Wi-Fi!", Toast.LENGTH_SHORT).show();
+        }
+        if(! gps_enabled && !network_enabled){
+            Toast.makeText(this, "Turn on GPS and Wi-Fi!", Toast.LENGTH_SHORT).show();
         }
     }
     public void onLocationChanged(Location location) {
