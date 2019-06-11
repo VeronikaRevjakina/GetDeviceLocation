@@ -9,6 +9,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
+import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 
 import android.os.Looper;
@@ -277,8 +278,9 @@ public class MainActivity extends AppCompatActivity {
 
 
         LocationManager lm = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+        WifiManager wifi = (WifiManager)getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         boolean gps_enabled = false;
-        boolean network_enabled = false;
+        boolean wifi_enabled = false;
 
         try {
             gps_enabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER);
@@ -287,7 +289,8 @@ public class MainActivity extends AppCompatActivity {
         }
 
         try {
-            network_enabled = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+
+            wifi_enabled =  wifi.isWifiEnabled();
 
         } catch (Exception ex) {
         }
@@ -295,11 +298,12 @@ public class MainActivity extends AppCompatActivity {
         if (!gps_enabled ) {
             Toast.makeText(this, "Turn on GPS!", Toast.LENGTH_SHORT).show();
         }
-        if(!network_enabled){
+        /*if(!network_enabled){
             Toast.makeText(this, "Turn on Wi-Fi!", Toast.LENGTH_SHORT).show();
-        }
-        if(! gps_enabled && !network_enabled){
-            Toast.makeText(this, "Turn on GPS and Wi-Fi!", Toast.LENGTH_SHORT).show();
+        }*/
+
+        if (!wifi_enabled){
+            Toast.makeText(this, "Turn on Wi-Fi!", Toast.LENGTH_SHORT).show();
         }
     }
     public void onLocationChanged(Location location) {
@@ -871,7 +875,7 @@ public class MainActivity extends AppCompatActivity {
 
                             activityProcessing(event);
 
-                            //TODO : Add new database where store duration and calories for transition using all location updates
+
 
 
                     /*new Thread(new Runnable() {

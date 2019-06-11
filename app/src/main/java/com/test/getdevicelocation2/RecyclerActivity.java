@@ -9,6 +9,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.Toast;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -41,7 +42,14 @@ public class RecyclerActivity extends MainActivity {
 
         //final List<DetectedActivities> last24HoursActivity=getDatabase().activityDao().getExitActivitiesBetweenDates(fromTime,new Date());
 
-        final List<DetectedActivities> last24HoursActivity=getDatabase().activityDao().getExitActivitiesBetweenDates(fromTime,new Date());
+        List<DetectedActivities> temp=new ArrayList<>();
+        final List<DetectedActivities> last24HoursActivityTemp=getDatabase().activityDao().getExitActivitiesBetweenDates(fromTime,new Date());
+        for(int i=1;i<last24HoursActivityTemp.size();i++){
+            if(Integer.compare(last24HoursActivityTemp.get(i).getDetectedActivityId(), last24HoursActivityTemp.get(i-1).getDetectedActivityId())!=0){
+            temp.add(last24HoursActivityTemp.get(i));
+            }
+        }
+        final List<DetectedActivities> last24HoursActivity=temp;
 
 
         // specify an adapter
@@ -57,7 +65,7 @@ public class RecyclerActivity extends MainActivity {
                 Intent intent = new Intent(view.getContext(), SingleDetectedActivity.class);
                 String activityIdStr=String.valueOf(activity.getId());
                 intent.putExtra("key",activityIdStr);
-                Toast.makeText(getApplicationContext(), activity.getId() + " is selected!", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(getApplicationContext(), activity.getId() + " is selected!", Toast.LENGTH_SHORT).show();
                 startActivity(intent);
 
                 //Toast.makeText(getApplicationContext(), activity.getId() + " is selected!", Toast.LENGTH_SHORT).show();
