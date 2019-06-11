@@ -32,11 +32,24 @@ public class SingleDetectedActivity extends MainActivity {
         //singleActionText.setText(String.valueOf(previousActivity.getElevation()));
         //List<DetectedActivities> currentAndLastActivity=getDatabase().activityDao().getListActivitiesById(activityId);
 
-        DetectedActivities previousActivity,currentActivity;
+        DetectedActivities previousActivity=allActivitiesForTransition.get(0);
+          DetectedActivities     currentActivity=allActivitiesForTransition.get(allActivitiesForTransition.size()-1);
         double calorieConsumptionSingleAction=0.0;
         double distanceFull=0.0;
         long durationBetweenTwoLastActivitiesInMinutes=0;
         double totalHeightChange=0.0;
+        if( currentActivity.getDetectedActivityId()==3){
+            durationBetweenTwoLastActivitiesInMinutes= durationBetweenTwoLastActivitiesInMinutes+TimeUnit.MILLISECONDS.toMinutes
+                    ( currentActivity.getTime().getTime()- previousActivity.getTime().getTime());
+            calorieConsumptionSingleAction=getCaloriesForTransitionActivity
+                    (previousActivity, currentActivity);
+            calorieConsumptionSingleActionText.setText("Calories consumption for chosen activity : " +
+                    String.valueOf(calorieConsumptionSingleAction));
+            distanceFull=0.0;
+            totalHeightChange=0.0;
+            singleActionText.setText("Total duration : " + String.valueOf(durationBetweenTwoLastActivitiesInMinutes) +
+                    "  Total distance: " + String.valueOf(distanceFull) + "  Total height change: " + String.valueOf(totalHeightChange));
+        }
 
         for (int i = 0; i < allActivitiesForTransition.size()-1; i++) {
 

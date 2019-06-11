@@ -67,8 +67,8 @@ import static com.google.android.gms.location.LocationServices.getFusedLocationP
 public class MainActivity extends AppCompatActivity {
 
 
-    private long UPDATE_INTERVAL = 40 * 1000;  /* 40 secs */
-    private long FASTEST_INTERVAL = 20*1000; /* 20 sec */
+    private long UPDATE_INTERVAL = 60 * 1000;  /* 60 secs */
+    private long FASTEST_INTERVAL = 40*1000; /* 40 sec */
 
 
     private FusedLocationProviderClient locationClient;
