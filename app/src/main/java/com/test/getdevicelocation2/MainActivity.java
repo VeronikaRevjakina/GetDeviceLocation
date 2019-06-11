@@ -8,6 +8,7 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.location.LocationManager;
 import android.os.AsyncTask;
 
 import android.os.Looper;
@@ -108,6 +109,7 @@ public class MainActivity extends AppCompatActivity {
 
         requestPermission();
         locationClient = getFusedLocationProviderClient(this);
+        isLocationServicesThere();
 
         Intent intent = new Intent(TRANSITION_ACTION_RECEIVER);
         mPendingIntent = PendingIntent.getBroadcast(MainActivity.this, 0, intent, 0);
@@ -115,7 +117,6 @@ public class MainActivity extends AppCompatActivity {
         mTransitionsReceiver = new myTransitionReceiver();
         registerReceiver(mTransitionsReceiver, new IntentFilter(TRANSITION_ACTION_RECEIVER));
 
-        //mActivityTransitionEvent = new ActivityTransitionEvent(1,0,100000);
 
         locationUpdatesForTransition=new ArrayList<String>();
 
@@ -123,15 +124,6 @@ public class MainActivity extends AppCompatActivity {
 
         getCurrentLocation();
 
-        /*SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-        String mRMRStr=sharedPreferences.getString(mRMRKey,"1500");
-        mRMR=Double.parseDouble(mRMRStr);
-        double latitude=mLastLocation.getLatitude();
-        double longitude=mLastLocation.getLongitude();
-        mElevation=getElevation(latitude,longitude);*/
-
-
-        //database = AppDatabase.getDatabaseInstance(getApplicationContext());
 
         new Thread(new Runnable() {
             @Override
@@ -180,37 +172,29 @@ public class MainActivity extends AppCompatActivity {
                 TextView textView1 = findViewById(R.id.location);
                 TextView textView2 = findViewById(R.id.elevation);
                 TextView textView4 = findViewById(R.id.RMR);
-                //textView1.setText("Location: "+location.toString());
 
-                /*try {
-                    textView4.setText("RMR is: "+ String.valueOf(
-                            countRMRUsingMifflinJeorEquation(1,60,165,21)));
-                } catch (InvalidParameterException e){
-                    e.printStackTrace();
-                }*/
 
 
                 getCurrentLocation();
 
-                //if(mLastLocation!=null) {
                 double Lon = mLastLocation.getLongitude();
                 double Lat = mLastLocation.getLatitude();
 
                 SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
                 String mRMRStr=sharedPreferences.getString(mRMRKey,"1500");
                 mRMR=Double.parseDouble(mRMRStr);
-                textView4.setText("RMR"+ String.valueOf(mRMR));
+                //textView4.setText("RMR"+ String.valueOf(mRMR));
 
                 String time = getCurrentTime();
-                textView1.setText("Latitude: " + String.valueOf(Lat) + "   Longitude: " + String.valueOf(Lon) + "   Time:" + time
-                +"RMR"+ String.valueOf(mRMR));
+                //textView1.setText("Latitude: " + String.valueOf(Lat) + "   Longitude: " + String.valueOf(Lon) + "   Time:" + time
+                //+"RMR"+ String.valueOf(mRMR));
 
 
 
                 double elevation=getElevation(Lat, Lon);
 
 
-                textView2.setText("Elevation: " + String.valueOf(elevation));
+                //textView2.setText("Elevation: " + String.valueOf(elevation));
 
                 //For Checking Database Latest Activities
                 /*Date timeMinus1Hour=new Date();
@@ -288,6 +272,29 @@ public class MainActivity extends AppCompatActivity {
                 onLocationChanged(locationResult.getLastLocation());
             }
             };
+    }
+    private void isLocationServicesThere() {
+
+
+        LocationManager lm = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+        boolean gps_enabled = false;
+        boolean network_enabled = false;
+
+        try {
+            gps_enabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER);
+            Toast.makeText(this, "Turn on GPS!", Toast.LENGTH_SHORT).show();
+        } catch (Exception ex) {
+        }
+
+        try {
+            network_enabled = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+            Toast.makeText(this, "Turn on Wi-Fi!", Toast.LENGTH_SHORT).show();
+        } catch (Exception ex) {
+        }
+
+        if (!gps_enabled ) {
+
+        }
     }
     public void onLocationChanged(Location location) {
         mLastLocation=location;
@@ -902,8 +909,7 @@ public class MainActivity extends AppCompatActivity {
             if (elevation == 0) {
                 elevation = mElevation;
             }
-            //IMPROVE HERE IF STOPS, remove else
-            //else{elevation = mElevation;}
+
 
             Date timeReal= getRealTimeinDateTypeFromElapsedTimeNanos(event.getElapsedRealTimeNanos());
 
